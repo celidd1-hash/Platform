@@ -123,8 +123,8 @@ export async function hardDelete(
   else await q.deleteLesson(id);
 
   // 3) Best-effort очистка хранилища (не блокирует удаление при сбое сети).
-  const video = getVideoProvider();
-  const file = getFileProvider();
+  const video = await getVideoProvider();
+  const file = await getFileProvider();
   let cleanedVideos = 0;
   let cleanedFiles = 0;
   for (const v of assets.videoIds) {

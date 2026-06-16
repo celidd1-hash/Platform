@@ -63,7 +63,7 @@ export async function getLessonForUser(lessonId: string, userId: string): Promis
   let videoSignedUrl: string | null = null;
   if (lesson.videoUrl) {
     try {
-      videoSignedUrl = await getVideoProvider().getSignedStreamUrl(lesson.videoUrl, userId);
+      videoSignedUrl = await (await getVideoProvider()).getSignedStreamUrl(lesson.videoUrl, userId);
     } catch {
       videoSignedUrl = null; // деградация вместо краха (ARCHITECTURE.md §6)
     }
@@ -114,7 +114,7 @@ export async function getFileDownload(
   const hasAccess = await q.hasActiveEnrollment(userId, file.lesson.module.courseId);
   if (!hasAccess) return null;
 
-  const signedUrl = await getFileProvider().getSignedDownloadUrl(file.fileUrl, userId);
+  const signedUrl = await (await getFileProvider()).getSignedDownloadUrl(file.fileUrl, userId);
   return { signedUrl, title: file.title, fileType: file.fileType };
 }
 

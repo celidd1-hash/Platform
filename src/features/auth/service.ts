@@ -36,7 +36,7 @@ async function issueToken(userId: string, type: string, ttlMs: number): Promise<
 
 async function sendVerifyEmail(email: string, rawToken: string): Promise<void> {
   const url = `${env.NEXT_PUBLIC_APP_URL}/verify?token=${rawToken}`;
-  await getEmailProvider().send(
+  await (await getEmailProvider()).send(
     email,
     'Подтверждение email — SVETOZAR SCHOOL',
     `<p>Добро пожаловать на Путь Мастера.</p>
@@ -47,7 +47,7 @@ async function sendVerifyEmail(email: string, rawToken: string): Promise<void> {
 
 async function sendResetEmail(email: string, rawToken: string): Promise<void> {
   const url = `${env.NEXT_PUBLIC_APP_URL}/reset/${rawToken}`;
-  await getEmailProvider().send(
+  await (await getEmailProvider()).send(
     email,
     'Сброс пароля — SVETOZAR SCHOOL',
     `<p>Вы запросили сброс пароля.</p>
@@ -65,7 +65,7 @@ export async function registerUser(input: RegisterInput): Promise<void> {
   const existing = await q.findUserByEmail(input.email);
   if (existing) {
     // Не раскрываем существование аккаунта. Можно мягко уведомить владельца.
-    await getEmailProvider().send(
+    await (await getEmailProvider()).send(
       input.email,
       'Попытка регистрации — SVETOZAR SCHOOL',
       `<p>На этот email уже есть аккаунт. Если это были вы — просто войдите или восстановите пароль.</p>`,

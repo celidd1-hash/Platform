@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { env } from '@/config/env';
+import { getSecret } from '@/lib/secrets';
 import { SIGNED_URL } from '@/config/constants';
 
 /**
@@ -61,18 +61,14 @@ class NullVideoProvider implements VideoProvider {
   }
 }
 
-let instance: VideoProvider | null = null;
-
-export function getVideoProvider(): VideoProvider {
-  if (instance) return instance;
-  if (env.BUNNY_LIBRARY_ID && env.BUNNY_TOKEN_AUTH_KEY) {
-    instance = new BunnyVideoProvider(
-      env.BUNNY_LIBRARY_ID,
-      env.BUNNY_TOKEN_AUTH_KEY,
-      env.BUNNY_API_KEY,
-    );
-  } else {
-    instance = new NullVideoProvider();
+export async function getVideoProvider(): Promise<VideoProvider> {
+  const [libraryId, tokenKey, apiKey] = await Promise.all([
+    getSecret('BUNNY_LIBRARY_ID'),
+    getSecret('BUNNY_TOKEN_AUTH_KEY'),
+    getSecret('BUNNY_API_KEY'),
+  ]);
+  if (libraryId && tokenKey) {
+    return new BunnyVideoProvider(libraryId, tokenKey, apiKey);
   }
-  return instance;
+  return new NullVideoProvider();
 }

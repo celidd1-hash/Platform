@@ -53,7 +53,7 @@ export async function submitHomework(
   const strictness = settings?.strictness ?? HOMEWORK.DEFAULT_STRICTNESS;
   const knowledgeBase = knowledge.map((k) => `# ${k.title}\n${k.contentMd}`).join('\n\n');
 
-  const provider = getAiProvider();
+  const provider = await getAiProvider();
 
   // Fallback: ИИ недоступен → сохраняем «на проверке», урок временно засчитывается.
   if (!provider) {

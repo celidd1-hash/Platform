@@ -1,4 +1,4 @@
-import { env } from '@/config/env';
+import { getSecret } from '@/lib/secrets';
 
 /**
  * Абстракция оповещений (ARCHITECTURE.md §5). Сегодня внутри — Telegram Bot API.
@@ -29,12 +29,7 @@ class NullNotifier implements Notifier {
   }
 }
 
-let instance: Notifier | null = null;
-
-export function getNotifier(): Notifier {
-  if (instance) return instance;
-  instance = env.TELEGRAM_BOT_TOKEN
-    ? new TelegramNotifier(env.TELEGRAM_BOT_TOKEN)
-    : new NullNotifier();
-  return instance;
+export async function getNotifier(): Promise<Notifier> {
+  const token = await getSecret('TELEGRAM_BOT_TOKEN');
+  return token ? new TelegramNotifier(token) : new NullNotifier();
 }

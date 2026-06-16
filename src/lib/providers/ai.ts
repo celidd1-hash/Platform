@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { z } from 'zod';
+import { getSecret } from '@/lib/secrets';
 import { env } from '@/config/env';
 import { HOMEWORK_VERDICT } from '@/config/constants';
 
@@ -114,15 +115,13 @@ function stripCodeFence(text: string): string {
   return match?.[1] ?? text;
 }
 
-let instance: AiProvider | null = null;
-
 /**
- * Возвращает провайдера ИИ или null, если ключ не задан.
+ * Возвращает провайдера ИИ или null, если ключ не задан (в БД-настройках или env).
  * При null вызывающий код применяет fallback: ДЗ сохраняется со статусом «на проверке» (ТЗ §3.4).
  */
-export function getAiProvider(): AiProvider | null {
-  if (instance) return instance;
-  if (!env.ANTHROPIC_API_KEY) return null;
-  instance = new ClaudeAiProvider(env.ANTHROPIC_API_KEY, env.ANTHROPIC_MODEL);
-  return instance;
+export async function getAiProvider(): Promise<AiProvider | null> {
+  const apiKey = await getSecret('ANTHROPIC_API_KEY');
+  if (!apiKey) return null;
+  const model = (await getSecret('ANTHROPIC_MODEL')) || env.ANTHROPIC_MODEL;
+  return new ClaudeAiProvider(apiKey, model);
 }

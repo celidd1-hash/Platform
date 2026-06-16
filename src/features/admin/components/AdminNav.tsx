@@ -10,6 +10,7 @@ const TABS = [
   { href: '/admin/students', label: 'Ученики' },
   { href: '/admin/homework', label: 'Проверка ДЗ' },
   { href: '/admin/achievements', label: 'Достижения' },
+  { href: '/admin/settings', label: 'Интеграции' },
 ];
 
 /** Подменю админки (ТЗ §3.7). */

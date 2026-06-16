@@ -27,7 +27,7 @@ export async function sendMentorMessageAction(
   const limited = rateLimit(`mentor:${session.user.id}`, RATE_LIMITS.HOMEWORK_PER_MINUTE, 60_000);
   if (!limited.allowed) return fail('Слишком часто. Подождите немного.');
 
-  const provider = getAiProvider();
+  const provider = await getAiProvider();
   if (!provider) {
     return ok('AI-Наставник временно недоступен. Попробуйте позже или загляните в Центр знаний.');
   }

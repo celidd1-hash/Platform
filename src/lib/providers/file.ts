@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { env } from '@/config/env';
+import { getSecret } from '@/lib/secrets';
 import { SIGNED_URL } from '@/config/constants';
 
 /**
@@ -59,12 +59,9 @@ class NullFileProvider implements FileProvider {
   }
 }
 
-let instance: FileProvider | null = null;
-
-export function getFileProvider(): FileProvider {
-  if (instance) return instance;
-  instance = env.BUNNY_TOKEN_AUTH_KEY
-    ? new BunnyFileProvider(env.BUNNY_TOKEN_AUTH_KEY, env.BUNNY_STORAGE_PASSWORD)
-    : new NullFileProvider();
-  return instance;
+export async function getFileProvider(): Promise<FileProvider> {
+  const tokenKey = await getSecret('BUNNY_TOKEN_AUTH_KEY');
+  if (!tokenKey) return new NullFileProvider();
+  const storageKey = await getSecret('BUNNY_STORAGE_PASSWORD');
+  return new BunnyFileProvider(tokenKey, storageKey);
 }

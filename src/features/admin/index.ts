@@ -30,6 +30,11 @@ export { listForAdmin } from './achievements-admin';
 export type { AdminAchievement } from './achievements-admin';
 export { AchievementsAdmin } from './components/AchievementsAdmin';
 
+// Интеграции (ключи сервисов)
+export { getIntegrations } from './integrations';
+export type { IntegrationView } from './integrations';
+export { IntegrationsPanel } from './components/IntegrationsPanel';
+
 // CRUD структуры курсов
 export { getCourseEditor, getLessonEditor } from './course-edit';
 export { CourseForm } from './components/CourseForm';

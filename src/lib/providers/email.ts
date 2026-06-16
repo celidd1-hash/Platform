@@ -1,3 +1,4 @@
+import { getSecret } from '@/lib/secrets';
 import { env } from '@/config/env';
 
 /**
@@ -38,12 +39,9 @@ class ConsoleEmailProvider implements EmailProvider {
   }
 }
 
-let instance: EmailProvider | null = null;
-
-export function getEmailProvider(): EmailProvider {
-  if (instance) return instance;
-  instance = env.RESEND_API_KEY
-    ? new ResendEmailProvider(env.RESEND_API_KEY, env.EMAIL_FROM)
-    : new ConsoleEmailProvider();
-  return instance;
+export async function getEmailProvider(): Promise<EmailProvider> {
+  const apiKey = await getSecret('RESEND_API_KEY');
+  if (!apiKey) return new ConsoleEmailProvider();
+  const from = (await getSecret('EMAIL_FROM')) || env.EMAIL_FROM;
+  return new ResendEmailProvider(apiKey, from);
 }

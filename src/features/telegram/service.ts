@@ -58,7 +58,7 @@ export async function handleWebhookUpdate(update: unknown): Promise<void> {
   const chatId = message?.chat?.id;
   if (!text || chatId === undefined) return;
 
-  const notifier = getNotifier();
+  const notifier = await getNotifier();
 
   if (text.startsWith('/start')) {
     const code = text.split(/\s+/)[1];
@@ -108,7 +108,7 @@ export async function notify(
   });
 
   try {
-    const res = await getNotifier().send(user.telegramChatId, text);
+    const res = await (await getNotifier()).send(user.telegramChatId, text);
     await q.markNotification(row.id, res.ok ? 'sent' : 'failed', res.ok ? new Date() : null);
   } catch {
     await q.markNotification(row.id, 'failed', null);

@@ -343,6 +343,16 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+/// Настройки интеграций (ключи Anthropic/Bunny/Telegram/Resend), управляются из админки.
+/// Значения хранятся ЗАШИФРОВАННО (AES-256-GCM, ключ из AUTH_SECRET) — ТЗ §6А.5.
+model AppSetting {
+  key       String   @id
+  value     String // зашифрованное значение
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("app_settings")
+}
+
 /// Статьи Центра знаний (ТЗ §3.8).
 model KbArticle {
   id          String  @id @default(cuid())

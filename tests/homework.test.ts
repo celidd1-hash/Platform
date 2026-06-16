@@ -59,7 +59,7 @@ describe('submitHomework', () => {
   });
 
   it('fallback: ИИ недоступен → verdict pending, урок временно засчитан (ТЗ §3.4)', async () => {
-    vi.mocked(getAiProvider).mockReturnValue(null);
+    vi.mocked(getAiProvider).mockResolvedValue(null);
     const r = await submitHomework('u-fallback', 'l1', LONG_TEXT);
     expect(r.ok).toBe(true);
     if (r.ok) {
@@ -70,7 +70,7 @@ describe('submitHomework', () => {
   });
 
   it('passed → урок засчитан', async () => {
-    vi.mocked(getAiProvider).mockReturnValue({
+    vi.mocked(getAiProvider).mockResolvedValue({
       checkHomework: vi.fn().mockResolvedValue({ verdict: 'passed', score: 88, feedback: 'Отлично' }), chat: vi.fn(),
     });
     const r = await submitHomework('u-pass', 'l1', LONG_TEXT);
@@ -84,7 +84,7 @@ describe('submitHomework', () => {
   });
 
   it('needs_work → урок НЕ засчитан', async () => {
-    vi.mocked(getAiProvider).mockReturnValue({
+    vi.mocked(getAiProvider).mockResolvedValue({
       checkHomework: vi.fn().mockResolvedValue({ verdict: 'needs_work', score: 40, feedback: 'Доработайте' }), chat: vi.fn(),
     });
     const r = await submitHomework('u-needs', 'l1', LONG_TEXT);
@@ -97,7 +97,7 @@ describe('submitHomework', () => {
   });
 
   it('ошибка API → fallback pending (деградация вместо краха)', async () => {
-    vi.mocked(getAiProvider).mockReturnValue({
+    vi.mocked(getAiProvider).mockResolvedValue({
       checkHomework: vi.fn().mockRejectedValue(new Error('timeout')), chat: vi.fn(),
     });
     const r = await submitHomework('u-error', 'l1', LONG_TEXT);
