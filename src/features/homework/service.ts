@@ -86,8 +86,11 @@ export async function submitHomework(
       passScore,
       strictness,
     });
-  } catch {
-    // Ошибка API → тот же fallback (деградация вместо краха, ARCHITECTURE.md §6).
+  } catch (e) {
+    // Ошибка API → fallback (деградация вместо краха, ARCHITECTURE.md §6).
+    // Логируем причину для диагностики (в логи сервера, без текста ученика).
+    const err = e as { status?: number; message?: string };
+    console.error('[homework AI check failed]', 'status=', err.status, 'msg=', err.message);
     await q.createHomework({
       userId,
       lessonId,

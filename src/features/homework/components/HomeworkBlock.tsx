@@ -36,7 +36,7 @@ function Verdict({ result }: { result: NonNullable<HomeworkState['result']> }) {
       {result.feedback && <p className="mt-2 text-ink/90">{result.feedback}</p>}
       {result.verdict === 'pending' && (
         <p className="mt-2 text-muted-2">
-          ИИ-наставник временно недоступен — урок засчитан, проверка придёт позже.
+          Задание принято и засчитано. Результат проверки появится позже.
         </p>
       )}
     </div>
