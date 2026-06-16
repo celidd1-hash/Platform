@@ -212,7 +212,8 @@ export async function confirmTwoFactor(userId: string, code: string): Promise<Ac
   const user = await q.getTwoFactor(userId);
   if (!user?.twoFactorSecret) return fail('Сначала начните подключение 2FA');
   const secret = decryptSecret(user.twoFactorSecret);
-  if (!verifyTotp(code, secret)) return fail('Неверный код. Попробуйте ещё раз.');
+  if (!verifyTotp(code, secret))
+    return fail('Неверный код. Проверьте, что время на телефоне выставлено автоматически, и введите свежий код.');
   await q.enableTwoFactor(userId);
   await q.writeAuditLog({ actorId: userId, action: 'two_factor_enable' });
   return ok(null);
