@@ -2,9 +2,9 @@ import { authenticator } from 'otplib';
 
 /**
  * Обёртка над TOTP (ТЗ §6А.2) для 2FA. Имя «otplib» живёт только здесь.
- * Допускаем окно ±2 шага (±60 с) на рассинхрон часов телефона и сервера.
+ * Допускаем окно ±4 шага (±2 мин) на рассинхрон часов телефона и сервера.
  */
-authenticator.options = { window: 2 };
+authenticator.options = { window: 4 };
 
 const ISSUER = 'SVETOZAR SCHOOL';
 
