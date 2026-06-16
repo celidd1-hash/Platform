@@ -125,3 +125,26 @@ export async function getAiProvider(): Promise<AiProvider | null> {
   const model = (await getSecret('ANTHROPIC_MODEL')) || env.ANTHROPIC_MODEL;
   return new ClaudeAiProvider(apiKey, model);
 }
+
+/**
+ * Тест подключения к Claude (для админки): минимальный запрос, понятный диагноз.
+ * Возвращает ok=true при успехе или текст ошибки (невалидный ключ / нет баланса / модель).
+ */
+export async function testAiConnection(): Promise<{ ok: boolean; detail: string }> {
+  const apiKey = await getSecret('ANTHROPIC_API_KEY');
+  if (!apiKey) return { ok: false, detail: 'Ключ ANTHROPIC_API_KEY не задан (ни в платформе, ни в env).' };
+  const model = (await getSecret('ANTHROPIC_MODEL')) || env.ANTHROPIC_MODEL;
+  try {
+    const client = new Anthropic({ apiKey });
+    await client.messages.create({ model, max_tokens: 5, messages: [{ role: 'user', content: 'ping' }] });
+    return { ok: true, detail: `Подключение успешно. Модель: ${model}.` };
+  } catch (e) {
+    const err = e as { status?: number; message?: string };
+    const status = err.status ?? '—';
+    let hint = '';
+    if (err.status === 401) hint = ' → ключ невалиден (создайте новый в console.anthropic.com).';
+    else if (err.status === 400 && /credit|balance/i.test(err.message ?? '')) hint = ' → нет баланса: пополните счёт Anthropic.';
+    else if (err.status === 404) hint = ` → модель "${model}" не найдена.`;
+    return { ok: false, detail: `Ошибка ${status}: ${err.message?.slice(0, 200)}${hint}` };
+  }
+}

@@ -1,7 +1,8 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { fail, type ActionResult } from '@/lib/utils';
+import { ok, fail, type ActionResult } from '@/lib/utils';
+import { testAiConnection } from '@/lib/providers/ai';
 import { requireAdmin } from './guard';
 import { saveIntegration, removeIntegration } from './integrations';
 
@@ -21,4 +22,12 @@ export async function clearIntegrationAction(key: string): Promise<ActionResult<
   const res = await removeIntegration(admin.id, key);
   if (res.ok) revalidatePath('/admin/settings');
   return res;
+}
+
+/** Тест подключения к Claude (диагностика прямо в админке). */
+export async function testAnthropicAction(): Promise<ActionResult<string>> {
+  const admin = await requireAdmin();
+  if (!admin) return fail('Доступ только для администратора');
+  const res = await testAiConnection();
+  return res.ok ? ok(res.detail) : fail(res.detail);
 }

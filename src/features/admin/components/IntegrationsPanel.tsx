@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import type { IntegrationView } from '../integrations';
-import { saveIntegrationAction, clearIntegrationAction } from '../integration-actions';
+import { saveIntegrationAction, clearIntegrationAction, testAnthropicAction } from '../integration-actions';
 
 const inputCls =
   'w-full rounded-xl border border-line bg-bg-2 px-4 py-2.5 text-sm text-ink outline-none focus:border-gold';
@@ -85,6 +85,31 @@ function Field({ item }: { item: IntegrationView }) {
   );
 }
 
+function TestAnthropic() {
+  const [pending, start] = useTransition();
+  const [res, setRes] = useState<{ ok: boolean; text: string } | null>(null);
+  return (
+    <div className="mb-3">
+      <button
+        onClick={() =>
+          start(async () => {
+            setRes(null);
+            const r = await testAnthropicAction();
+            setRes({ ok: r.ok, text: r.ok ? r.data : r.error });
+          })
+        }
+        disabled={pending}
+        className="rounded-lg border border-gold/40 px-4 py-2 text-xs text-gold-bright hover:bg-[rgba(200,160,79,0.08)] disabled:opacity-50"
+      >
+        {pending ? 'Проверяю…' : 'Проверить подключение Claude'}
+      </button>
+      {res && (
+        <div className={`mt-2 text-xs ${res.ok ? 'text-ok' : 'text-[var(--err)]'}`}>{res.text}</div>
+      )}
+    </div>
+  );
+}
+
 /** Панель «Интеграции»: ключи сервисов задаются в платформе (ТЗ §6А.5). */
 export function IntegrationsPanel({ items }: { items: IntegrationView[] }) {
   // Группируем поля по сервису.
@@ -98,6 +123,7 @@ export function IntegrationsPanel({ items }: { items: IntegrationView[] }) {
       {Object.entries(groups).map(([group, fields]) => (
         <section key={group}>
           <div className="sectlabel mb-4">{group}</div>
+          {group.startsWith('Anthropic') && <TestAnthropic />}
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             {fields.map((f) => (
               <Field key={f.key} item={f} />
