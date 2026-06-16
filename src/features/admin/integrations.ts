@@ -60,6 +60,14 @@ export async function saveIntegration(
   if (!isManaged(key)) return fail('Неизвестный ключ');
   const trimmed = value.trim();
   if (!trimmed) return fail('Пустое значение');
+  // Ключи/настройки — только печатаемый ASCII. Ловим «кривые» символы из Word/заметок
+  // (напр. типографское тире «—» вместо дефиса), которые ломают HTTP-заголовки.
+  if (/[^\x20-\x7E]/.test(trimmed)) {
+    return fail(
+      'Значение содержит недопустимый символ (возможно, «—» вместо «-» из Word). ' +
+        'Скопируйте ключ заново прямо из консоли сервиса.',
+    );
+  }
   await setSecret(key, trimmed);
   // В аудит пишем только факт изменения ключа, без значения (ТЗ §6А.9).
   await writeAuditLog({ actorId: adminId, action: 'integration_set', targetType: 'setting', targetId: key });
