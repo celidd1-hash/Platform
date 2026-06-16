@@ -1,0 +1,360 @@
+// SVETOZAR SCHOOL — единый источник правды о данных (ARCHITECTURE.md §3).
+// Модель построена по ТЗ §4. Миграции ТОЛЬКО аддитивные (CLAUDE.md).
+// Типы выводятся отсюда автоматически — руками не дублировать.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────── Пользователи и доступ ─────────────────────────
+
+enum Role {
+  student
+  curator
+  admin
+}
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  passwordHash    String    @map("password_hash")
+  name            String
+  avatarUrl       String?   @map("avatar_url")
+  role            Role      @default(student)
+  xp              Int       @default(0)
+  streakDays      Int       @default(0) @map("streak_days")
+  lastActivityAt  DateTime? @map("last_activity_at")
+  isPublicInRating Boolean  @default(true) @map("is_public_in_rating")
+  isBlocked       Boolean   @default(false) @map("is_blocked") // блокировка ученика админом (ТЗ §3.7)
+  twoFactorEnabled Boolean  @default(false) @map("two_factor_enabled") // 2FA TOTP (ТЗ §6А.2)
+  twoFactorSecret String?   @map("two_factor_secret") // секрет TOTP, зашифрован AES-256-GCM
+  emailVerifiedAt DateTime? @map("email_verified_at")
+  telegramChatId  String?   @map("telegram_chat_id")
+  notifyPrefs     Json?     @map("notify_prefs")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  enrollments      Enrollment[]
+  lessonProgress   LessonProgress[]
+  homework         Homework[]
+  userAchievements UserAchievement[]
+  xpEvents         XpEvent[]
+  notifications    Notification[]
+  authTokens       AuthToken[]
+  grantedEnrollments Enrollment[] @relation("GrantedBy")
+
+  @@index([xp])
+  @@map("users")
+}
+
+/// Одноразовые токены: подтверждение email и сброс пароля (ТЗ §6А.2).
+model AuthToken {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  type      String // email_verify | password_reset
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+  @@map("auth_tokens")
+}
+
+// ───────────────────────── Курсы → Модули → Уроки ─────────────────────────
+
+model Course {
+  id            String   @id @default(cuid())
+  title         String
+  slug          String   @unique
+  description   String
+  coverUrl      String?  @map("cover_url")
+  durationWeeks Int?     @map("duration_weeks")
+  isStrictOrder Boolean  @default(true) @map("is_strict_order")
+  isPublished   Boolean  @default(false) @map("is_published")
+  // Мягкое/полное удаление (Дополнение №1). Выборки для учеников фильтруют isArchived=false и deletedAt=null.
+  isArchived    Boolean  @default(false) @map("is_archived")
+  deletedAt     DateTime? @map("deleted_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  modules      Module[]
+  enrollments  Enrollment[]
+  aiKnowledge  AiKnowledge[]
+  aiSettings   AiSettings?
+
+  @@map("courses")
+}
+
+model Module {
+  id         String   @id @default(cuid())
+  courseId   String   @map("course_id")
+  title      String
+  position   Int
+  isArchived Boolean  @default(false) @map("is_archived")
+  deletedAt  DateTime? @map("deleted_at")
+
+  course  Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons Lesson[]
+
+  @@index([courseId, position])
+  @@map("modules")
+}
+
+model Lesson {
+  id             String  @id @default(cuid())
+  moduleId       String  @map("module_id")
+  title          String
+  position       Int
+  videoUrl       String? @map("video_url")
+  videoProvider  String? @map("video_provider")
+  contentMd      String? @map("content_md")
+  lessonSummaryMd String? @map("lesson_summary_md")
+  requiresNote   Boolean @default(true) @map("requires_note")
+  minNoteLength  Int?    @map("min_note_length")
+  xpReward       Int     @default(50) @map("xp_reward")
+  isArchived     Boolean @default(false) @map("is_archived")
+  deletedAt      DateTime? @map("deleted_at")
+
+  module      Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  files       LessonFile[]
+  progress    LessonProgress[]
+  homework    Homework[]
+  aiKnowledge AiKnowledge[]
+
+  @@index([moduleId, position])
+  @@map("lessons")
+}
+
+/// Файлы-вложения урока: .docx/.pdf/.pptx и пр. (ТЗ §3.3).
+model LessonFile {
+  id        String   @id @default(cuid())
+  lessonId  String   @map("lesson_id")
+  title     String
+  fileUrl   String   @map("file_url")
+  fileType  String   @map("file_type")
+  sizeBytes Int      @map("size_bytes")
+  position  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([lessonId, position])
+  @@map("lesson_files")
+}
+
+enum EnrollmentStatus {
+  active
+  revoked
+}
+
+/// Доступ ученика к курсу — выдаётся админом вручную (ТЗ §3.2).
+model Enrollment {
+  id        String           @id @default(cuid())
+  userId    String           @map("user_id")
+  courseId  String           @map("course_id")
+  grantedById String?        @map("granted_by")
+  status    EnrollmentStatus @default(active)
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  grantedBy User?   @relation("GrantedBy", fields: [grantedById], references: [id], onDelete: SetNull)
+
+  @@unique([userId, courseId])
+  @@index([courseId])
+  @@map("enrollments")
+}
+
+// ───────────────────────── Прогресс и ДЗ ─────────────────────────
+
+enum LessonStatus {
+  not_started
+  in_progress
+  completed
+}
+
+model LessonProgress {
+  id          String       @id @default(cuid())
+  userId      String       @map("user_id")
+  lessonId    String       @map("lesson_id")
+  status      LessonStatus @default(not_started)
+  videoPosition Int        @default(0) @map("video_position") // запоминание позиции (ТЗ §3.3)
+  videoWatchedAt DateTime? @map("video_watched_at") // видео просмотрено (для зачёта урока)
+  completedAt DateTime?    @map("completed_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@index([lessonId])
+  @@map("lesson_progress")
+}
+
+enum HomeworkVerdict {
+  passed
+  needs_work
+  pending
+}
+
+/// ДЗ ученика + вердикт ИИ-наставника (ТЗ §3.4).
+model Homework {
+  id        String           @id @default(cuid())
+  userId    String           @map("user_id")
+  lessonId  String           @map("lesson_id")
+  text      String
+  verdict   HomeworkVerdict?
+  score     Int?
+  feedback  String?
+  attemptNo Int              @default(1) @map("attempt_no")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([userId, lessonId])
+  @@index([lessonId, verdict])
+  @@map("homework")
+}
+
+// ───────────────────────── Обучение ИИ-агента ─────────────────────────
+
+/// База знаний для проверки ДЗ (вкладка «Обучение ИИ-агента», ТЗ §3.4).
+model AiKnowledge {
+  id        String   @id @default(cuid())
+  courseId  String   @map("course_id")
+  lessonId  String?  @map("lesson_id")
+  title     String
+  contentMd String   @map("content_md")
+  fileUrl   String?  @map("file_url")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  course Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lesson Lesson? @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
+  @@index([lessonId])
+  @@map("ai_knowledge")
+}
+
+/// Параметры проверки ДЗ на уровне курса (ТЗ §3.4).
+model AiSettings {
+  courseId       String @id @map("course_id")
+  passScore      Int    @default(70) @map("pass_score")
+  strictness     String @default("normal")
+  promptTemplate String? @map("prompt_template")
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@map("ai_settings")
+}
+
+// ───────────────────────── Геймификация ─────────────────────────
+
+/// Журнал начислений XP — рейтинг считается из него (ТЗ §4).
+model XpEvent {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  type      String
+  amount    Int
+  refId     String?  @map("ref_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("xp_events")
+}
+
+/// Каталог достижений. Добавлять/редактировать может только админ (ТЗ §3.5).
+model Achievement {
+  id            String  @id @default(cuid())
+  code          String  @unique
+  title         String
+  description   String
+  icon          String?
+  category      String?
+  rarity        String  @default("common")
+  xpReward      Int     @default(0) @map("xp_reward")
+  /// Условие выдачи в JSON (тип события + порог). Парсится Zod-схемой.
+  conditionJson Json    @map("condition_json")
+  /// Цель для прогресса X/Y (например, 7 дней стрика). NULL = бинарное.
+  targetValue   Int?    @map("target_value")
+  position      Int     @default(0)
+
+  userAchievements UserAchievement[]
+
+  @@map("achievements")
+}
+
+model UserAchievement {
+  userId        String   @map("user_id")
+  achievementId String   @map("achievement_id")
+  earnedAt      DateTime @default(now()) @map("earned_at")
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@id([userId, achievementId])
+  @@map("user_achievements")
+}
+
+// ───────────────────────── Оповещения и Центр знаний ─────────────────────────
+
+/// Очередь оповещений (включая результаты ДЗ в Telegram, ТЗ §3.9).
+model Notification {
+  id      String   @id @default(cuid())
+  userId  String   @map("user_id")
+  type    String
+  payload Json
+  channel String // app | telegram
+  status  String   @default("pending") // pending | sent | failed
+  sentAt  DateTime? @map("sent_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@map("notifications")
+}
+
+/// Аудит-журнал значимых действий (ТЗ §6А.9, Дополнение №1):
+/// вход, смена пароля, выдача/отзыв доступа, архив/удаление курсов, просмотр конспектов.
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?  @map("actor_id") // кто (null = система/неаутентифицированный)
+  action    String // login | password_change | enrollment_grant | course_archive | course_delete | ...
+  targetType String? @map("target_type") // course | lesson | user | homework | ...
+  targetId  String?  @map("target_id")
+  meta      Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([actorId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+/// Статьи Центра знаний (ТЗ §3.8).
+model KbArticle {
+  id          String  @id @default(cuid())
+  category    String
+  title       String
+  icon        String?
+  steps       Int     @default(0)
+  description String?
+  bodyMd      String  @map("body_md")
+  position    Int     @default(0)
+  isPublished Boolean @default(true) @map("is_published")
+
+  @@index([category, position])
+  @@map("kb_articles")
+}

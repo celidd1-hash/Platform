@@ -1,0 +1,152 @@
+import { computeProgressPct } from '@/lib/progress';
+import { ok, fail, type ActionResult } from '@/lib/utils';
+import { writeAuditLog } from './queries';
+import * as q from './queries/students';
+
+/**
+ * Сервис кабинетов учеников (ТЗ §3.7): список, карточка, выдача/отзыв доступа, блокировка.
+ * Вызывается после проверки роли admin (в actions). Все действия — в аудит-журнал.
+ */
+
+export interface StudentRow {
+  id: string;
+  name: string;
+  email: string;
+  xp: number;
+  streakDays: number;
+  isBlocked: boolean;
+  courses: number;
+  createdAt: Date;
+}
+
+export async function listStudents(search?: string): Promise<StudentRow[]> {
+  const rows = await q.listStudents(search?.trim() || undefined);
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    email: r.email,
+    xp: r.xp,
+    streakDays: r.streakDays,
+    isBlocked: r.isBlocked,
+    courses: r._count.enrollments,
+    createdAt: r.createdAt,
+  }));
+}
+
+export interface StudentCabinet {
+  id: string;
+  name: string;
+  email: string;
+  xp: number;
+  streakDays: number;
+  isBlocked: boolean;
+  createdAt: Date;
+  courses: Array<{ id: string; title: string; status: string; progressPct: number; granted: boolean }>;
+  allCourses: Array<{ id: string; title: string; isArchived: boolean; granted: boolean }>;
+  homework: Array<{
+    id: string;
+    course: string;
+    lesson: string;
+    verdict: string | null;
+    score: number | null;
+    feedback: string | null;
+    attemptNo: number;
+    createdAt: Date;
+  }>;
+  achievements: Array<{ title: string; icon: string | null; earnedAt: Date }>;
+}
+
+export async function getStudentCabinet(userId: string): Promise<StudentCabinet | null> {
+  const user = await q.getStudent(userId);
+  if (!user) return null;
+
+  const [enrollments, completedIds, homework, achievements, allCourses, enrolledIds] =
+    await Promise.all([
+      q.getStudentEnrollments(userId),
+      q.getStudentCompletedLessonIds(userId),
+      q.getStudentHomework(userId),
+      q.getStudentAchievements(userId),
+      q.listAllCoursesForGrant(),
+      q.getEnrolledCourseIds(userId),
+    ]);
+  const completed = new Set(completedIds);
+  const enrolled = new Set(enrolledIds);
+
+  const courses = enrollments.map((e) => {
+    const lessonIds = e.course.modules.flatMap((m) => m.lessons.map((l) => l.id));
+    const done = lessonIds.filter((id) => completed.has(id)).length;
+    return {
+      id: e.course.id,
+      title: e.course.title,
+      status: e.status,
+      progressPct: computeProgressPct(lessonIds.length, done),
+      granted: e.status === 'active',
+    };
+  });
+
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    xp: user.xp,
+    streakDays: user.streakDays,
+    isBlocked: user.isBlocked,
+    createdAt: user.createdAt,
+    courses,
+    allCourses: allCourses.map((c) => ({
+      id: c.id,
+      title: c.title,
+      isArchived: c.isArchived,
+      granted: enrolled.has(c.id),
+    })),
+    homework: homework.map((h) => ({
+      id: h.id,
+      course: h.lesson.module.course.title,
+      lesson: h.lesson.title,
+      verdict: h.verdict,
+      score: h.score,
+      feedback: h.feedback,
+      attemptNo: h.attemptNo,
+      createdAt: h.createdAt,
+    })),
+    achievements: achievements.map((a) => ({
+      title: a.achievement.title,
+      icon: a.achievement.icon,
+      earnedAt: a.earnedAt,
+    })),
+  };
+}
+
+export async function grantAccess(
+  adminId: string,
+  userId: string,
+  courseId: string,
+): Promise<ActionResult<null>> {
+  const student = await q.studentExists(userId);
+  if (!student) return fail('Ученик не найден');
+  await q.grantEnrollment(userId, courseId, adminId);
+  await writeAuditLog({ actorId: adminId, action: 'enrollment_grant', targetType: 'user', targetId: userId, meta: { courseId } });
+  return ok(null);
+}
+
+export async function revokeAccess(
+  adminId: string,
+  userId: string,
+  courseId: string,
+): Promise<ActionResult<null>> {
+  await q.revokeEnrollment(userId, courseId);
+  await writeAuditLog({ actorId: adminId, action: 'enrollment_revoke', targetType: 'user', targetId: userId, meta: { courseId } });
+  return ok(null);
+}
+
+export async function setBlocked(
+  adminId: string,
+  userId: string,
+  blocked: boolean,
+): Promise<ActionResult<{ blocked: boolean }>> {
+  const student = await q.studentExists(userId);
+  if (!student) return fail('Ученик не найден');
+  await q.setBlocked(userId, blocked);
+  await writeAuditLog({ actorId: adminId, action: blocked ? 'user_block' : 'user_unblock', targetType: 'user', targetId: userId });
+  return ok({ blocked });
+}
