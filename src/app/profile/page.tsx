@@ -115,11 +115,6 @@ export default async function ProfilePage() {
           <div className="mt-3">
             <TwoFactorSetup enabled={tfa.enabled} />
           </div>
-          {session.user.role === 'admin' && !tfa.enabled && (
-            <div className="mt-3 rounded-xl border border-[rgba(217,160,102,0.5)] bg-[rgba(217,160,102,0.06)] px-4 py-3 text-sm text-[var(--warn)]">
-              Для доступа к админ-панели включите 2FA — это обязательно для администраторов (ТЗ §6А.2).
-            </div>
-          )}
 
           <div className="sectlabel mb-4 mt-6">Настройки</div>
           <div className="flex flex-col gap-3 rounded-token border border-line bg-panel p-5">
