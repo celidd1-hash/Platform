@@ -45,8 +45,21 @@ const serverSchema = z.object({
 });
 
 const publicSchema = z.object({
-  NEXT_PUBLIC_APP_URL: z.string().url().default('http://localhost:3000'),
+  // Может быть не задан — тогда выводим из домена Vercel (см. resolveAppUrl).
+  NEXT_PUBLIC_APP_URL: z.string().url().optional(),
 });
+
+/**
+ * Базовый URL приложения. Приоритет: явный NEXT_PUBLIC_APP_URL → прод-домен Vercel
+ * (VERCEL_PROJECT_PRODUCTION_URL, проставляется Vercel автоматически) → localhost.
+ * Так на Vercel ничего вписывать руками не нужно.
+ */
+function resolveAppUrl(explicit: string | undefined): string {
+  if (explicit) return explicit;
+  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  if (vercel) return `https://${vercel}`;
+  return 'http://localhost:3000';
+}
 
 function formatErrors(error: z.ZodError): string {
   return error.issues.map((i) => `  • ${i.path.join('.')}: ${i.message}`).join('\n');
@@ -66,7 +79,11 @@ function parseEnv() {
     );
   }
 
-  return { ...parsedServer.data, ...parsedPublic.data };
+  return {
+    ...parsedServer.data,
+    ...parsedPublic.data,
+    NEXT_PUBLIC_APP_URL: resolveAppUrl(parsedPublic.data.NEXT_PUBLIC_APP_URL),
+  };
 }
 
 export const env = parseEnv();
