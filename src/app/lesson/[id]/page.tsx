@@ -55,6 +55,7 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
           <LessonFiles
             lessonId={lesson.id}
             files={lesson.files}
+            materialsUrl={lesson.materialsUrl}
             unlocked={lesson.filesUnlocked}
             lockHint={
               lesson.requiresNote

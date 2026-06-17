@@ -30,6 +30,7 @@ export default async function LessonEditorPage({
           lessonSummaryMd: lesson.lessonSummaryMd,
           contentMd: lesson.contentMd,
           videoUrl: lesson.videoUrl,
+          materialsUrl: lesson.materialsUrl,
           requiresNote: lesson.requiresNote,
           minNoteLength: lesson.minNoteLength,
           xpReward: lesson.xpReward,

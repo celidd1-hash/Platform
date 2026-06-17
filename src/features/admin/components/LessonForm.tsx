@@ -16,6 +16,7 @@ export interface LessonFormValues {
   lessonSummaryMd: string | null;
   contentMd: string | null;
   videoUrl: string | null;
+  materialsUrl: string | null;
   requiresNote: boolean;
   minNoteLength: number | null;
   xpReward: number;
@@ -49,6 +50,20 @@ export function LessonForm({ lesson }: { lesson: LessonFormValues }) {
       <label className="block">
         <span className={labelCls}>Видео (ID/ссылка Bunny)</span>
         <input name="videoUrl" defaultValue={lesson.videoUrl ?? ''} placeholder="напр. GUID видео в Bunny Stream" className={inputCls} />
+      </label>
+
+      <label className="block">
+        <span className={labelCls}>Ссылка на материалы (Google Диск и т.п.)</span>
+        <input
+          name="materialsUrl"
+          type="url"
+          defaultValue={lesson.materialsUrl ?? ''}
+          placeholder="https://drive.google.com/..."
+          className={inputCls}
+        />
+        <span className="mt-1 block text-[11px] text-muted-2">
+          Необязательно. Откроется ученику кнопкой после просмотра видео и отправки ДЗ.
+        </span>
       </label>
 
       <label className="block">

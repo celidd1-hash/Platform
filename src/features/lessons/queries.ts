@@ -18,6 +18,7 @@ export function getLessonWithContext(lessonId: string) {
       contentMd: true,
       lessonSummaryMd: true,
       videoUrl: true,
+      materialsUrl: true,
       requiresNote: true,
       minNoteLength: true,
       module: {

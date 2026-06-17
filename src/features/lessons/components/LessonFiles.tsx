@@ -10,15 +10,17 @@ type LessonFile = { id: string; title: string; fileType: string; sizeBytes: numb
 export function LessonFiles({
   lessonId,
   files,
+  materialsUrl,
   unlocked,
   lockHint,
 }: {
   lessonId: string;
   files: LessonFile[];
+  materialsUrl: string | null;
   unlocked: boolean;
   lockHint: string;
 }) {
-  if (files.length === 0) return null;
+  if (files.length === 0 && !materialsUrl) return null;
 
   return (
     <section>
@@ -28,6 +30,32 @@ export function LessonFiles({
           🔒 {lockHint}
         </p>
       )}
+
+      {materialsUrl && (
+        <div className="mb-2 flex items-center justify-between rounded-xl border border-line bg-panel px-4 py-3">
+          <div className="min-w-0">
+            <div className="truncate text-sm text-ink">Материалы курса (внешний диск)</div>
+            <div className="font-label text-[11px] uppercase tracking-[1px] text-muted-2">
+              Просмотр и скачивание
+            </div>
+          </div>
+          {unlocked ? (
+            <a
+              href={materialsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-none rounded-lg border border-line-strong px-3 py-1.5 font-label text-xs tracking-[1px] text-gold-bright transition-colors hover:bg-[rgba(200,160,79,0.08)]"
+            >
+              Открыть
+            </a>
+          ) : (
+            <span className="flex-none rounded-lg border border-line px-3 py-1.5 font-label text-xs tracking-[1px] text-muted-2">
+              🔒 Закрыто
+            </span>
+          )}
+        </div>
+      )}
+
       <ul className="flex flex-col gap-2">
         {files.map((file) => (
           <li

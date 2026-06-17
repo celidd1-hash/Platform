@@ -115,6 +115,7 @@ model Lesson {
   videoProvider  String? @map("video_provider")
   contentMd      String? @map("content_md")
   lessonSummaryMd String? @map("lesson_summary_md")
+  materialsUrl   String? @map("materials_url") // внешняя ссылка на материалы (напр. Google Диск)
   requiresNote   Boolean @default(true) @map("requires_note")
   minNoteLength  Int?    @map("min_note_length")
   xpReward       Int     @default(50) @map("xp_reward")

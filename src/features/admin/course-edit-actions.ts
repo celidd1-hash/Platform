@@ -71,6 +71,7 @@ export async function saveLessonAction(_prev: EditState, formData: FormData): Pr
     lessonSummaryMd: formData.get('lessonSummaryMd') || undefined,
     contentMd: formData.get('contentMd') || undefined,
     videoUrl: formData.get('videoUrl') || undefined,
+    materialsUrl: formData.get('materialsUrl') || undefined,
     requiresNote: formData.get('requiresNote') === 'on',
     minNoteLength: formData.get('minNoteLength') || undefined,
     xpReward: formData.get('xpReward') || undefined,

@@ -30,7 +30,9 @@ export interface LessonView {
   course: { title: string; slug: string };
   moduleTitle: string;
   files: Array<{ id: string; title: string; fileType: string; sizeBytes: number }>;
-  /** Конспекты открыты: видео просмотрено (+ ДЗ отправлено, если урок его требует). */
+  /** Внешняя ссылка на материалы (Google Диск и т.п.), если задана. */
+  materialsUrl: string | null;
+  /** Материалы (конспекты + ссылка) открыты: видео просмотрено (+ ДЗ отправлено, если урок требует). */
   filesUnlocked: boolean;
   prev: LessonNeighbor | null;
   next: LessonNeighbor | null;
@@ -78,11 +80,11 @@ export async function getLessonForUser(lessonId: string, userId: string): Promis
   const { lockedById } = computeUnlocks(orderedIds, watched, course.isStrictOrder);
   if (lockedById[lessonId]) return { kind: 'locked', courseSlug: course.slug };
 
-  // Конспекты открыты только после просмотра видео (+ отправки ДЗ, если оно требуется).
-  const filesUnlocked =
-    lesson.files.length === 0
-      ? false
-      : await areFilesUnlocked(userId, lessonId, lesson.requiresNote, Boolean(progress?.videoWatchedAt));
+  // Материалы (конспекты и/или внешняя ссылка) открыты после просмотра видео (+ отправки ДЗ).
+  const hasMaterials = lesson.files.length > 0 || Boolean(lesson.materialsUrl);
+  const filesUnlocked = !hasMaterials
+    ? false
+    : await areFilesUnlocked(userId, lessonId, lesson.requiresNote, Boolean(progress?.videoWatchedAt));
 
   // Подписанная HLS-ссылка с коротким TTL (ТЗ §6А.7) — только для доступного ученика.
   let videoSignedUrl: string | null = null;
@@ -113,6 +115,7 @@ export async function getLessonForUser(lessonId: string, userId: string): Promis
       course: { title: course.title, slug: course.slug },
       moduleTitle: lesson.module.title,
       files: lesson.files,
+      materialsUrl: lesson.materialsUrl,
       filesUnlocked,
       prev: prevRow ? { id: prevRow.id, title: prevRow.title } : null,
       next: nextRow ? { id: nextRow.id, title: nextRow.title } : null,

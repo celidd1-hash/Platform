@@ -99,6 +99,7 @@ export function createLesson(
     contentMd: string | null;
     lessonSummaryMd: string | null;
     videoUrl: string | null;
+    materialsUrl: string | null;
     requiresNote: boolean;
     minNoteLength: number | null;
     xpReward: number;
@@ -117,6 +118,7 @@ export function getLessonForEdit(lessonId: string) {
       contentMd: true,
       lessonSummaryMd: true,
       videoUrl: true,
+      materialsUrl: true,
       requiresNote: true,
       minNoteLength: true,
       xpReward: true,
@@ -176,6 +178,7 @@ export function updateLesson(
     contentMd: string | null;
     lessonSummaryMd: string | null;
     videoUrl: string | null;
+    materialsUrl: string | null;
     requiresNote: boolean;
     minNoteLength: number | null;
     xpReward: number;
