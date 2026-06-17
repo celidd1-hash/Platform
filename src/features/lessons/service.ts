@@ -120,6 +120,34 @@ export async function getLessonForUser(lessonId: string, userId: string): Promis
   };
 }
 
+/**
+ * Свежая подписанная ссылка на видео-поток урока (для авто-обновления в плеере, ТЗ §6А.7).
+ * Те же проверки, что и при открытии урока: enrollment + последовательная блокировка.
+ * Возвращает null, если урок/видео нет, нет доступа или урок заблокирован.
+ */
+export async function getLessonStreamUrl(userId: string, lessonId: string): Promise<string | null> {
+  const lesson = await q.getLessonWithContext(lessonId);
+  if (!lesson || !lesson.videoUrl) return null;
+
+  const course = lesson.module.course;
+  const [hasAccess, orderedLessons, watchedIds] = await Promise.all([
+    q.hasActiveEnrollment(userId, course.id),
+    q.listCourseLessonIds(course.id),
+    q.listWatchedLessonIdsForCourse(userId, course.id),
+  ]);
+  if (!hasAccess) return null;
+
+  const orderedIds = orderedLessons.map((l) => l.id);
+  const { lockedById } = computeUnlocks(orderedIds, new Set(watchedIds), course.isStrictOrder);
+  if (lockedById[lessonId]) return null;
+
+  try {
+    return await (await getVideoProvider()).getSignedStreamUrl(lesson.videoUrl, userId);
+  } catch {
+    return null; // деградация вместо краха (ARCHITECTURE.md §6)
+  }
+}
+
 export interface FileDownload {
   signedUrl: string;
   title: string;

@@ -1,5 +1,5 @@
 /** Публичный API фичи lessons (ARCHITECTURE.md §1). */
-export { getLessonForUser, getFileDownload } from './service';
+export { getLessonForUser, getFileDownload, getLessonStreamUrl } from './service';
 export type { LessonView, LessonAccess, LessonNeighbor, WatchResult, FileDownload } from './service';
 export { saveProgressAction, markWatchedAction } from './actions';
 export { LessonVideo } from './components/LessonVideo';

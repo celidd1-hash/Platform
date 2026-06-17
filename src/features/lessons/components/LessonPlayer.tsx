@@ -16,6 +16,7 @@ export function LessonPlayer({
   initialPosition = 0,
   onSavePosition,
   onWatched,
+  refreshSrc,
 }: {
   src: string | null;
   initialPosition?: number;
@@ -23,10 +24,15 @@ export function LessonPlayer({
   onSavePosition?: (seconds: number) => void;
   /** Видео просмотрено (≥80%, LESSON.WATCHED_THRESHOLD). */
   onWatched?: () => void;
+  /** Получить свежую подписанную ссылку (истёк токен/сбой сегмента) — для продолжения без перезагрузки. */
+  refreshSrc?: () => Promise<string | null>;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const lastSavedRef = useRef(0);
   const watchedSentRef = useRef(false);
+  const refreshSrcRef = useRef(refreshSrc);
+  refreshSrcRef.current = refreshSrc;
+  const lastRefreshRef = useRef(0);
   const [speed, setSpeed] = useState(1);
 
   useEffect(() => {
@@ -41,12 +47,24 @@ export function LessonPlayer({
       hls = new Hls({ enableWorker: true });
       hls.loadSource(src);
       hls.attachMedia(video);
-      // Авто-восстановление: при фатальном сбое сети/сегмента (моргнул интернет, отдача CDN)
-      // hls.js иначе встаёт намертво до перезагрузки. Пробуем продолжить, не теряя сеанс.
+      // Авто-восстановление: при фатальном сбое сети/сегмента (моргнул интернет, отдача CDN
+      // или истёк токен подписи) hls.js иначе встаёт намертво до перезагрузки. Сетевые сбои
+      // часто = протухший токен → тянем свежую подписанную ссылку и продолжаем с того же места.
       hls.on(Hls.Events.ERROR, (_event, data) => {
         if (!data.fatal || !hls) return;
         if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-          hls.startLoad(); // повторить загрузку сегментов
+          const now = Date.now();
+          // Троттлинг: не чаще раза в 5 с — защита от петли при недоступном видео.
+          if (refreshSrcRef.current && now - lastRefreshRef.current > 5000) {
+            lastRefreshRef.current = now;
+            void refreshSrcRef.current().then((fresh) => {
+              if (!hls) return;
+              if (fresh) hls.loadSource(fresh); // новая ссылка → currentTime сохраняется
+              hls.startLoad();
+            });
+          } else {
+            hls.startLoad();
+          }
         } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
           hls.recoverMediaError();
         } else {
