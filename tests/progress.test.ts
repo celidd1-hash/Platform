@@ -43,6 +43,29 @@ describe('computeUnlocks — строгий порядок (ТЗ §3.3)', () => 
   });
 });
 
+describe('computeUnlocks — открытие по просмотру, «продолжить» по завершению (ТЗ §3.3)', () => {
+  const lessons = ['l1', 'l2', 'l3'];
+
+  it('просмотр (≥80%) предыдущего открывает следующий, даже если ДЗ не сдано', () => {
+    // l1 просмотрен, но не завершён (ДЗ на проверке) → l2 открыт.
+    const r = computeUnlocks(lessons, new Set(['l1']), true, new Set());
+    expect(r.lockedById.l2).toBe(false);
+    expect(r.lockedById.l3).toBe(true);
+  });
+
+  it('«продолжить» указывает на первый незавершённый открытый урок', () => {
+    // l1 просмотрен и завершён, l2 просмотрен (открыт), но ещё не завершён.
+    const r = computeUnlocks(lessons, new Set(['l1', 'l2']), true, new Set(['l1']));
+    expect(r.lockedById.l2).toBe(false);
+    expect(r.continueLessonId).toBe('l2');
+  });
+
+  it('без второго аргумента «продолжить» считается по тому же набору', () => {
+    const r = computeUnlocks(lessons, new Set(['l1']), true);
+    expect(r.continueLessonId).toBe('l2');
+  });
+});
+
 describe('computeUnlocks — свободный порядок', () => {
   it('все уроки открыты независимо от прогресса', () => {
     const r = computeUnlocks(['a', 'b', 'c'], new Set(), false);

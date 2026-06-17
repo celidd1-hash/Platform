@@ -4,6 +4,7 @@ import { computeUnlocks } from '@/lib/progress';
 import { ok, fail, type ActionResult } from '@/lib/utils';
 import { LESSON_STATUS, HOMEWORK } from '@/config/constants';
 import { onLessonCompleted } from '@/features/gamification';
+import { hasSubmittedHomework } from '@/features/homework';
 import * as q from './queries';
 
 /**
@@ -29,8 +30,25 @@ export interface LessonView {
   course: { title: string; slug: string };
   moduleTitle: string;
   files: Array<{ id: string; title: string; fileType: string; sizeBytes: number }>;
+  /** Конспекты открыты: видео просмотрено (+ ДЗ отправлено, если урок его требует). */
+  filesUnlocked: boolean;
   prev: LessonNeighbor | null;
   next: LessonNeighbor | null;
+}
+
+/**
+ * Доступны ли конспекты: видео просмотрено на ≥80% И (если урок требует ДЗ) ДЗ отправлено.
+ * Если ДЗ не требуется — достаточно просмотра (ТЗ §3.3).
+ */
+async function areFilesUnlocked(
+  userId: string,
+  lessonId: string,
+  requiresNote: boolean,
+  watched: boolean,
+): Promise<boolean> {
+  if (!watched) return false;
+  if (!requiresNote) return true;
+  return hasSubmittedHomework(userId, lessonId);
 }
 
 export type LessonAccess =
@@ -45,19 +63,26 @@ export async function getLessonForUser(lessonId: string, userId: string): Promis
   if (!lesson) return { kind: 'not_found' };
 
   const course = lesson.module.course;
-  const [hasAccess, orderedLessons, completedIds, progress] = await Promise.all([
+  const [hasAccess, orderedLessons, watchedIds, progress] = await Promise.all([
     q.hasActiveEnrollment(userId, course.id),
     q.listCourseLessonIds(course.id),
-    q.listCompletedLessonIdsForCourse(userId, course.id),
+    q.listWatchedLessonIdsForCourse(userId, course.id),
     q.getProgress(userId, lessonId),
   ]);
 
   if (!hasAccess) return { kind: 'access_denied', courseSlug: course.slug };
 
+  // Следующий урок открывается по просмотру предыдущего на ≥80% (без ожидания ДЗ).
   const orderedIds = orderedLessons.map((l) => l.id);
-  const completed = new Set(completedIds);
-  const { lockedById } = computeUnlocks(orderedIds, completed, course.isStrictOrder);
+  const watched = new Set(watchedIds);
+  const { lockedById } = computeUnlocks(orderedIds, watched, course.isStrictOrder);
   if (lockedById[lessonId]) return { kind: 'locked', courseSlug: course.slug };
+
+  // Конспекты открыты только после просмотра видео (+ отправки ДЗ, если оно требуется).
+  const filesUnlocked =
+    lesson.files.length === 0
+      ? false
+      : await areFilesUnlocked(userId, lessonId, lesson.requiresNote, Boolean(progress?.videoWatchedAt));
 
   // Подписанная HLS-ссылка с коротким TTL (ТЗ §6А.7) — только для доступного ученика.
   let videoSignedUrl: string | null = null;
@@ -88,6 +113,7 @@ export async function getLessonForUser(lessonId: string, userId: string): Promis
       course: { title: course.title, slug: course.slug },
       moduleTitle: lesson.module.title,
       files: lesson.files,
+      filesUnlocked,
       prev: prevRow ? { id: prevRow.id, title: prevRow.title } : null,
       next: nextRow ? { id: nextRow.id, title: nextRow.title } : null,
     },
@@ -113,6 +139,17 @@ export async function getFileDownload(
   if (!file) return null;
   const hasAccess = await q.hasActiveEnrollment(userId, file.lesson.module.courseId);
   if (!hasAccess) return null;
+
+  // Гейт доступа к конспекту (ТЗ §3.3): просмотр видео + отправка ДЗ. Проверка на сервере,
+  // не только в UI — иначе прямой запрос к /api/files обошёл бы блокировку.
+  const progress = await q.getProgress(userId, lessonId);
+  const unlocked = await areFilesUnlocked(
+    userId,
+    lessonId,
+    file.lesson.requiresNote,
+    Boolean(progress?.videoWatchedAt),
+  );
+  if (!unlocked) return null;
 
   const signedUrl = await (await getFileProvider()).getSignedDownloadUrl(file.fileUrl, userId);
   return { signedUrl, title: file.title, fileType: file.fileType };

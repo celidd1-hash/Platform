@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Hls from 'hls.js';
+import { LESSON } from '@/config/constants';
 
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
 
@@ -20,7 +21,7 @@ export function LessonPlayer({
   initialPosition?: number;
   /** Сохранить позицию (сек). Дросселируется — вызывается не чаще раза в 10 с. */
   onSavePosition?: (seconds: number) => void;
-  /** Видео просмотрено (≥90%). */
+  /** Видео просмотрено (≥80%, LESSON.WATCHED_THRESHOLD). */
   onWatched?: () => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -71,7 +72,7 @@ export function LessonPlayer({
       !watchedSentRef.current &&
       onWatched &&
       video.duration > 0 &&
-      video.currentTime / video.duration >= 0.9
+      video.currentTime / video.duration >= LESSON.WATCHED_THRESHOLD
     ) {
       watchedSentRef.current = true;
       onWatched();

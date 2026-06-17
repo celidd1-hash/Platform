@@ -65,6 +65,23 @@ export function listCompletedLessonIdsForCourse(userId: string, courseId: string
     .then((rows) => rows.map((r) => r.lessonId));
 }
 
+/**
+ * Уроки курса, открывающие следующий: просмотренные на ≥80% (videoWatchedAt задан)
+ * ИЛИ уже завершённые (на случай, когда урок засчитан через ДЗ-fallback без отметки видео).
+ */
+export function listWatchedLessonIdsForCourse(userId: string, courseId: string) {
+  return db.lessonProgress
+    .findMany({
+      where: {
+        userId,
+        lesson: { module: { courseId } },
+        OR: [{ videoWatchedAt: { not: null } }, { status: LessonStatus.completed }],
+      },
+      select: { lessonId: true },
+    })
+    .then((rows) => rows.map((r) => r.lessonId));
+}
+
 /** Файл-вложение с курсом его урока — для проверки доступа на скачивание. */
 export function getFileWithCourse(lessonId: string, fileId: string) {
   return db.lessonFile.findFirst({
@@ -74,7 +91,7 @@ export function getFileWithCourse(lessonId: string, fileId: string) {
       title: true,
       fileUrl: true,
       fileType: true,
-      lesson: { select: { module: { select: { courseId: true } } } },
+      lesson: { select: { requiresNote: true, module: { select: { courseId: true } } } },
     },
   });
 }
@@ -82,7 +99,7 @@ export function getFileWithCourse(lessonId: string, fileId: string) {
 export function getProgress(userId: string, lessonId: string) {
   return db.lessonProgress.findUnique({
     where: { userId_lessonId: { userId, lessonId } },
-    select: { status: true, videoPosition: true },
+    select: { status: true, videoPosition: true, videoWatchedAt: true },
   });
 }
 

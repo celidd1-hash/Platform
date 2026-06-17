@@ -94,18 +94,22 @@ export async function getCoursePage(slug: string, userId: string): Promise<Cours
   const course = await q.getCourseBySlug(slug);
   if (!course) return null;
 
-  const [hasAccess, completedIds] = await Promise.all([
+  const [hasAccess, completedIds, watchedIds] = await Promise.all([
     q.hasActiveEnrollment(userId, course.id),
     q.listCompletedLessonIdsForCourse(userId, course.id),
+    q.listWatchedLessonIdsForCourse(userId, course.id),
   ]);
   const completed = new Set(completedIds);
+  const watched = new Set(watchedIds);
 
-  // Плоский порядок уроков курс→модуль→урок для расчёта блокировок.
+  // Плоский порядок уроков курс→модуль→урок. Открытие — по просмотру (≥80%),
+  // «продолжить» — по завершению (видео + ДЗ).
   const orderedLessonIds = course.modules.flatMap((m) => m.lessons.map((l) => l.id));
   const { lockedById, continueLessonId } = computeUnlocks(
     orderedLessonIds,
-    completed,
+    watched,
     course.isStrictOrder,
+    completed,
   );
 
   const modules: CoursePageModule[] = course.modules.map((m) => ({

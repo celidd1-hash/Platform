@@ -52,6 +52,15 @@ export const HOMEWORK_VERDICT = {
 } as const;
 export type HomeworkVerdict = (typeof HOMEWORK_VERDICT)[keyof typeof HOMEWORK_VERDICT];
 
+/** Прохождение урока: пороги просмотра и доступа к материалам (ТЗ §3.3). */
+export const LESSON = {
+  /**
+   * Доля видео, после которой урок считается «просмотренным»: открывает следующий
+   * урок (в курсе со строгим порядком) и — с учётом ДЗ — конспекты урока.
+   */
+  WATCHED_THRESHOLD: 0.8,
+} as const;
+
 /** Статусы прохождения урока. */
 export const LESSON_STATUS = {
   NOT_STARTED: 'not_started',

@@ -159,3 +159,8 @@ export interface HomeworkHistoryItem {
 export async function getHistory(userId: string, lessonId: string): Promise<HomeworkHistoryItem[]> {
   return q.getHomeworkHistory(userId, lessonId);
 }
+
+/** Отправлял ли ученик ДЗ по уроку хотя бы раз (для доступа к конспектам, ТЗ §3.3). */
+export async function hasSubmittedHomework(userId: string, lessonId: string): Promise<boolean> {
+  return (await q.countAttempts(userId, lessonId)) > 0;
+}

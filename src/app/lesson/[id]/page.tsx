@@ -52,7 +52,16 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
         )}
 
         <div className="mt-6">
-          <LessonFiles lessonId={lesson.id} files={lesson.files} />
+          <LessonFiles
+            lessonId={lesson.id}
+            files={lesson.files}
+            unlocked={lesson.filesUnlocked}
+            lockHint={
+              lesson.requiresNote
+                ? 'Откроется после просмотра видео и отправки домашнего задания.'
+                : 'Откроется после просмотра видео урока.'
+            }
+          />
         </div>
 
         {/* Блок ДЗ с проверкой ИИ-наставником (ТЗ §3.4). */}

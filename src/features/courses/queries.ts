@@ -97,3 +97,20 @@ export function listCompletedLessonIdsForCourse(userId: string, courseId: string
     })
     .then((rows) => rows.map((r) => r.lessonId));
 }
+
+/**
+ * Уроки курса, открывающие следующий: просмотренные на ≥80% (videoWatchedAt задан)
+ * ИЛИ уже завершённые (на случай, когда урок засчитан через ДЗ-fallback без отметки видео).
+ */
+export function listWatchedLessonIdsForCourse(userId: string, courseId: string) {
+  return db.lessonProgress
+    .findMany({
+      where: {
+        userId,
+        lesson: { module: { courseId } },
+        OR: [{ videoWatchedAt: { not: null } }, { status: LessonStatus.completed }],
+      },
+      select: { lessonId: true },
+    })
+    .then((rows) => rows.map((r) => r.lessonId));
+}

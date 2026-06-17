@@ -19,15 +19,18 @@ export interface UnlockResult {
 
 /**
  * Вычисляет блокировки по последовательному порядку.
- * Урок открыт, если: курс не строгий; ИЛИ это первый урок; ИЛИ предыдущий урок завершён.
+ * Урок открыт, если: курс не строгий; ИЛИ это первый урок; ИЛИ предыдущий урок
+ * просмотрен на ≥80% (ТЗ §3.3 — открытие следующего урока НЕ требует сдачи ДЗ).
  * @param orderedLessonIds id уроков в порядке курс→модуль→урок
- * @param completedIds множество id завершённых уроков
+ * @param watchedIds множество id уроков, просмотренных на ≥80% (открывают следующий)
  * @param isStrict строгий порядок (для свободного — всё открыто)
+ * @param completedIds множество завершённых уроков для «продолжить»; по умолчанию = watchedIds
  */
 export function computeUnlocks(
   orderedLessonIds: string[],
-  completedIds: ReadonlySet<string>,
+  watchedIds: ReadonlySet<string>,
   isStrict: boolean,
+  completedIds: ReadonlySet<string> = watchedIds,
 ): UnlockResult {
   const lockedById: Record<string, boolean> = {};
   let continueLessonId: string | null = null;
@@ -35,9 +38,10 @@ export function computeUnlocks(
   for (let i = 0; i < orderedLessonIds.length; i++) {
     const id = orderedLessonIds[i]!;
     const prevId = i > 0 ? orderedLessonIds[i - 1]! : null;
-    const locked = isStrict && prevId !== null && !completedIds.has(prevId);
+    const locked = isStrict && prevId !== null && !watchedIds.has(prevId);
     lockedById[id] = locked;
 
+    // «Продолжить» — первый открытый, но ещё не завершённый (видео + ДЗ) урок.
     if (continueLessonId === null && !locked && !completedIds.has(id)) {
       continueLessonId = id;
     }
