@@ -41,6 +41,18 @@ export function LessonPlayer({
       hls = new Hls({ enableWorker: true });
       hls.loadSource(src);
       hls.attachMedia(video);
+      // Авто-восстановление: при фатальном сбое сети/сегмента (моргнул интернет, отдача CDN)
+      // hls.js иначе встаёт намертво до перезагрузки. Пробуем продолжить, не теряя сеанс.
+      hls.on(Hls.Events.ERROR, (_event, data) => {
+        if (!data.fatal || !hls) return;
+        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+          hls.startLoad(); // повторить загрузку сегментов
+        } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+          hls.recoverMediaError();
+        } else {
+          hls.destroy();
+        }
+      });
     } else {
       video.src = src;
     }
