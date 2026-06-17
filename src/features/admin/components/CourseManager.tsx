@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import Link from 'next/link';
 import { archiveAction } from '../actions';
 import type { AdminCourseNode, TargetType } from '../service';
 import { DeleteConfirm } from './DeleteConfirm';
@@ -71,13 +72,21 @@ export function CourseManager({ courses }: { courses: AdminCourseNode[] }) {
                 {course.students} учеников · {course.isPublished ? 'опубликован' : 'черновик'}
               </div>
             </div>
-            <RowControls
-              target="course"
-              id={course.id}
-              title={course.title}
-              archived={course.isArchived}
-              onDelete={setDel}
-            />
+            <div className="flex flex-none items-center gap-2">
+              <Link
+                href={`/admin/courses/${course.id}`}
+                className="rounded-md border border-gold/40 px-2.5 py-1 text-xs text-gold-bright transition-colors hover:bg-[rgba(200,160,79,0.08)]"
+              >
+                Открыть / редактировать
+              </Link>
+              <RowControls
+                target="course"
+                id={course.id}
+                title={course.title}
+                archived={course.isArchived}
+                onDelete={setDel}
+              />
+            </div>
           </div>
 
           <div className="flex flex-col gap-3 p-4">
@@ -102,13 +111,21 @@ export function CourseManager({ courses }: { courses: AdminCourseNode[] }) {
                       <span className={`text-sm ${lesson.isArchived ? 'text-muted-2 line-through' : 'text-ink'}`}>
                         {lesson.title}
                       </span>
-                      <RowControls
-                        target="lesson"
-                        id={lesson.id}
-                        title={lesson.title}
-                        archived={lesson.isArchived}
-                        onDelete={setDel}
-                      />
+                      <div className="flex flex-none items-center gap-2">
+                        <Link
+                          href={`/admin/lesson/${lesson.id}/edit`}
+                          className="rounded-md border border-line px-2.5 py-1 text-xs text-gold transition-colors hover:bg-[rgba(200,160,79,0.08)]"
+                        >
+                          Видео / описание
+                        </Link>
+                        <RowControls
+                          target="lesson"
+                          id={lesson.id}
+                          title={lesson.title}
+                          archived={lesson.isArchived}
+                          onDelete={setDel}
+                        />
+                      </div>
                     </li>
                   ))}
                   {module.lessons.length === 0 && (
