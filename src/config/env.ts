@@ -27,6 +27,8 @@ const serverSchema = z.object({
   BUNNY_API_KEY: z.string().optional(),
   BUNNY_LIBRARY_ID: z.string().optional(),
   BUNNY_TOKEN_AUTH_KEY: z.string().optional(),
+  // CDN hostname библиотеки (напр. vz-xxxx.b-cdn.net) — с него отдаётся прямой HLS.
+  BUNNY_CDN_HOSTNAME: z.string().optional(),
   BUNNY_STORAGE_ZONE: z.string().optional(),
   BUNNY_STORAGE_PASSWORD: z.string().optional(),
 

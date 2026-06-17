@@ -21,6 +21,7 @@ export const INTEGRATION_FIELDS: IntegrationField[] = [
   { key: 'ANTHROPIC_MODEL', label: 'Модель', group: 'Anthropic (проверка ДЗ, наставник)', secret: false, placeholder: 'claude-haiku-4-5-20251001' },
 
   { key: 'BUNNY_LIBRARY_ID', label: 'Library ID', group: 'Bunny (видео)', secret: false },
+  { key: 'BUNNY_CDN_HOSTNAME', label: 'CDN Hostname', group: 'Bunny (видео)', secret: false, placeholder: 'vz-xxxxxxxx-xxx.b-cdn.net' },
   { key: 'BUNNY_API_KEY', label: 'API-ключ библиотеки', group: 'Bunny (видео)', secret: true },
   { key: 'BUNNY_TOKEN_AUTH_KEY', label: 'Token Authentication Key', group: 'Bunny (видео)', secret: true },
   { key: 'BUNNY_STORAGE_ZONE', label: 'Storage Zone', group: 'Bunny (файлы)', secret: false },
