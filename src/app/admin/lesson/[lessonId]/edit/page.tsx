@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getLessonEditor, LessonForm } from '@/features/admin';
+import { getLessonEditor, LessonForm, LessonFilesEditor } from '@/features/admin';
 
 export const metadata = { title: 'Редактор урока — Админ — SVETOZAR SCHOOL' };
 
@@ -35,6 +35,10 @@ export default async function LessonEditorPage({
           xpReward: lesson.xpReward,
         }}
       />
+
+      <div className="mt-6">
+        <LessonFilesEditor lessonId={lesson.id} files={lesson.files} />
+      </div>
     </div>
   );
 }

@@ -2,6 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Загрузка конспектов идёт через server action. Поднимаем лимит тела (по умолчанию 1 МБ).
+  // Выше ~4.5 МБ всё равно режет платформа Vercel — фактический потолок задаём в коде (UPLOAD).
+  experimental: { serverActions: { bodySizeLimit: '5mb' } },
   // Заголовки безопасности (ТЗ §6А.6). CSP уточняется при подключении внешних доменов (Bunny CDN).
   async headers() {
     return [

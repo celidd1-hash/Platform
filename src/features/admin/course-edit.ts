@@ -1,5 +1,8 @@
+import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { ok, fail, slugify, type ActionResult } from '@/lib/utils';
+import { getFileProvider } from '@/lib/providers/file';
+import { UPLOAD } from '@/config/constants';
 import { writeAuditLog } from './queries';
 import * as q from './queries/course-edit';
 
@@ -127,4 +130,73 @@ export async function saveLesson(
   const created = await q.createLesson(input.moduleId, { ...data, position });
   await writeAuditLog({ actorId: adminId, action: 'lesson_create', targetType: 'lesson', targetId: created.id });
   return ok({ id: created.id });
+}
+
+// ── Конспекты (файлы-вложения урока) ──
+
+const EXT_BY_MIME: Record<string, string> = {
+  'application/pdf': '.pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': '.pptx',
+  'image/png': '.png',
+  'image/jpeg': '.jpg',
+  'image/webp': '.webp',
+};
+
+export interface UploadInput {
+  name: string;
+  type: string;
+  size: number;
+  bytes: Uint8Array;
+}
+
+/** Загрузить конспект к уроку: валидация типа/размера → Bunny Storage → запись LessonFile. */
+export async function addLessonFile(
+  adminId: string,
+  lessonId: string,
+  file: UploadInput,
+): Promise<ActionResult<{ id: string }>> {
+  if (!(await q.lessonExists(lessonId))) return fail('Урок не найден');
+
+  const isDoc = (UPLOAD.ALLOWED_DOC_MIME as readonly string[]).includes(file.type);
+  const isImage = (UPLOAD.ALLOWED_IMAGE_MIME as readonly string[]).includes(file.type);
+  if (!isDoc && !isImage) {
+    return fail('Недопустимый тип. Разрешено: PDF, DOCX, PPTX, PNG, JPEG, WEBP.');
+  }
+  if (file.size <= 0) return fail('Файл пустой');
+  const maxBytes = isImage ? UPLOAD.MAX_IMAGE_SIZE_BYTES : UPLOAD.MAX_LESSON_FILE_BYTES;
+  if (file.size > maxBytes) {
+    return fail(`Файл больше лимита (${Math.round(maxBytes / 1024 / 1024)} МБ).`);
+  }
+
+  const ext = EXT_BY_MIME[file.type] ?? '';
+  const storagePath = `lessons/${lessonId}/${randomUUID()}${ext}`;
+  const uploaded = await (await getFileProvider()).uploadFile(storagePath, file.bytes, file.type);
+  if (!uploaded.ok) return fail('Не удалось загрузить файл (проверьте ключи Bunny Storage).');
+
+  const title = file.name.trim().slice(0, 200) || `Материал${ext}`;
+  const position = await q.nextFilePosition(lessonId);
+  const created = await q.createLessonFile({
+    lessonId,
+    title,
+    fileUrl: storagePath,
+    fileType: file.type,
+    sizeBytes: file.size,
+    position,
+  });
+  await writeAuditLog({ actorId: adminId, action: 'lesson_file_add', targetType: 'lesson', targetId: lessonId });
+  return ok({ id: created.id });
+}
+
+/** Удалить конспект: запись из БД + best-effort очистка хранилища. Возвращает lessonId для revalidate. */
+export async function removeLessonFile(
+  adminId: string,
+  fileId: string,
+): Promise<ActionResult<{ lessonId: string }>> {
+  const file = await q.getLessonFile(fileId);
+  if (!file) return fail('Файл не найден');
+  await (await getFileProvider()).deleteFile(file.fileUrl).catch(() => undefined);
+  await q.deleteLessonFile(fileId);
+  await writeAuditLog({ actorId: adminId, action: 'lesson_file_delete', targetType: 'lesson', targetId: file.lessonId });
+  return ok({ lessonId: file.lessonId });
 }

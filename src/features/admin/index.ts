@@ -43,3 +43,5 @@ export { StructureEditor } from './components/StructureEditor';
 export type { EditorModule } from './components/StructureEditor';
 export { LessonForm } from './components/LessonForm';
 export type { LessonFormValues } from './components/LessonForm';
+export { LessonFilesEditor } from './components/LessonFilesEditor';
+export type { EditorLessonFile } from './components/LessonFilesEditor';

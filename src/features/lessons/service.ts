@@ -149,14 +149,15 @@ export async function getLessonStreamUrl(userId: string, lessonId: string): Prom
 }
 
 export interface FileDownload {
-  signedUrl: string;
-  title: string;
-  fileType: string;
+  body: ReadableStream<Uint8Array>;
+  contentType: string;
+  filename: string;
 }
 
 /**
- * Подписанная ссылка на скачивание вложения с проверкой доступа (ТЗ §6А.7).
- * Возвращает null, если файла нет или у ученика нет активного enrollment.
+ * Скачивание вложения через наш сервер с проверкой доступа (ТЗ §6А.7).
+ * Файл проксируется из Bunny Storage (по AccessKey, server-side) — публичного URL нет.
+ * Возвращает null, если файла нет, нет enrollment или не выполнен гейт (просмотр + ДЗ).
  */
 export async function getFileDownload(
   userId: string,
@@ -179,8 +180,13 @@ export async function getFileDownload(
   );
   if (!unlocked) return null;
 
-  const signedUrl = await (await getFileProvider()).getSignedDownloadUrl(file.fileUrl, userId);
-  return { signedUrl, title: file.title, fileType: file.fileType };
+  const fetched = await (await getFileProvider()).fetchFile(file.fileUrl);
+  if (!fetched.ok || !fetched.body) return null;
+  return {
+    body: fetched.body,
+    contentType: fetched.contentType ?? file.fileType,
+    filename: file.title,
+  };
 }
 
 /** Проверка владения: ученик имеет активный доступ к курсу этого урока. */

@@ -121,8 +121,51 @@ export function getLessonForEdit(lessonId: string) {
       minNoteLength: true,
       xpReward: true,
       module: { select: { id: true, title: true, course: { select: { id: true, title: true } } } },
+      files: {
+        orderBy: { position: 'asc' },
+        select: { id: true, title: true, fileType: true, sizeBytes: true },
+      },
     },
   });
+}
+
+// ── Файлы-вложения урока (конспекты) ──
+
+export async function nextFilePosition(lessonId: string) {
+  const last = await db.lessonFile.findFirst({
+    where: { lessonId },
+    orderBy: { position: 'desc' },
+    select: { position: true },
+  });
+  return (last?.position ?? -1) + 1;
+}
+
+export function createLessonFile(data: {
+  lessonId: string;
+  title: string;
+  fileUrl: string;
+  fileType: string;
+  sizeBytes: number;
+  position: number;
+}) {
+  return db.lessonFile.create({ data, select: { id: true } });
+}
+
+/** Файл-вложение со storage-ключом и курсом урока — для удаления и очистки хранилища. */
+export function getLessonFile(fileId: string) {
+  return db.lessonFile.findUnique({
+    where: { id: fileId },
+    select: {
+      id: true,
+      fileUrl: true,
+      lessonId: true,
+      lesson: { select: { module: { select: { courseId: true } } } },
+    },
+  });
+}
+
+export function deleteLessonFile(fileId: string) {
+  return db.lessonFile.delete({ where: { id: fileId } });
 }
 
 export function updateLesson(

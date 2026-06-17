@@ -22,9 +22,11 @@ export async function GET(
     return NextResponse.json({ error: 'Файл недоступен' }, { status: 404 });
   }
 
-  // Редирект на подписанную ссылку с заголовками безопасности (ТЗ §6А.6).
-  return NextResponse.redirect(download.signedUrl, {
+  // Стримим файл из хранилища через сервер (публичного URL у файла нет, ТЗ §6А.6/§6А.7).
+  return new NextResponse(download.body, {
     headers: {
+      'Content-Type': download.contentType,
+      'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(download.filename)}`,
       'X-Content-Type-Options': 'nosniff',
       'Cache-Control': 'private, no-store',
     },
