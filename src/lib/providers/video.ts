@@ -38,10 +38,10 @@ class BunnyVideoProvider implements VideoProvider {
   async getSignedStreamUrl(videoId: string, _userId: string): Promise<string> {
     const expires = Math.floor(Date.now() / 1000) + SIGNED_URL.VIDEO_TTL_SEC;
     const host = this.cdnHostname.replace(/^https?:\/\//, '').replace(/\/+$/, '');
-    // Directory-токен: подпись считается по token_path, а сам token_path уходит в query.
+    // Directory-токен: подпись считается по token_path (вся папка /{guid}/).
     const tokenPath = `/${videoId}/`;
     const params = `token_path=${tokenPath}`;
-    // Bunny CDN token auth: base64(sha256(key + signaturePath + expires + params)), url-safe.
+    // hashableBase = key + signaturePath + expires + parameterData (raw token_path), url-safe base64.
     const token = createHash('sha256')
       .update(this.tokenAuthKey + tokenPath + expires + params)
       .digest('base64')
@@ -49,8 +49,10 @@ class BunnyVideoProvider implements VideoProvider {
       .replace(/\+/g, '-')
       .replace(/\//g, '_')
       .replace(/=/g, '');
-    const query = `token=${token}&expires=${expires}&token_path=${encodeURIComponent(tokenPath)}`;
-    return `https://${host}/${videoId}/playlist.m3u8?${query}`;
+    // Bunny кладёт токен ПРЕФИКСОМ ПУТИ (bcdn_token=…&expires=…&token_path=…), а не в query —
+    // только так токен «приклеивается» к относительным ссылкам на сегменты внутри HLS-плейлиста.
+    const prefix = `bcdn_token=${token}&expires=${expires}&token_path=${encodeURIComponent(tokenPath)}`;
+    return `https://${host}/${prefix}/${videoId}/playlist.m3u8`;
   }
 
   async deleteVideo(videoId: string): Promise<{ ok: boolean }> {
