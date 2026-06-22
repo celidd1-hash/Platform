@@ -85,9 +85,13 @@ export default async function AdminHomeworkPage({
                 {h.score != null && <span className="ml-2 text-gold-bright">{h.score}/100</span>}
               </span>
             </div>
-            <p className="mt-2 whitespace-pre-wrap text-sm text-ink/90">{h.text}</p>
+            <p className="mt-2 whitespace-pre-wrap [overflow-wrap:anywhere] text-sm text-ink/90">
+              {h.text}
+            </p>
             {h.feedback && (
-              <p className="mt-2 border-l-2 border-line pl-3 text-xs text-muted">Наставник: {h.feedback}</p>
+              <p className="mt-2 [overflow-wrap:anywhere] border-l-2 border-line pl-3 text-xs text-muted">
+                Наставник: {h.feedback}
+              </p>
             )}
           </div>
         ))}
