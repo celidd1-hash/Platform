@@ -18,6 +18,7 @@ export async function saveAchievementAction(
 
   const parsed = achievementSchema.safeParse({
     id: formData.get('id') || undefined,
+    courseId: formData.get('courseId') || undefined,
     title: formData.get('title'),
     description: formData.get('description'),
     icon: formData.get('icon') || undefined,

@@ -34,21 +34,66 @@ async function bumpStreak(userId: string) {
   await q.updateStreak(userId, streak, now);
 }
 
+/**
+ * Статистика ученика: общая (по всем курсам) + по каждому курсу отдельно.
+ * Достижение, привязанное к курсу, оценивается по статистике этого курса; стрик — общий.
+ */
+async function buildStats(
+  userId: string,
+): Promise<{ global: UserStats; byCourse: Map<string, UserStats> }> {
+  const [global, lessonCids, hwCids, modCids] = await Promise.all([
+    q.getUserStats(userId),
+    q.completedLessonCourseIds(userId),
+    q.passedHomeworkCourseIds(userId),
+    q.completedModuleCourseIds(userId),
+  ]);
+  const byCourse = new Map<string, UserStats>();
+  const ensure = (cid: string): UserStats => {
+    let s = byCourse.get(cid);
+    if (!s) {
+      s = { lessonsCompleted: 0, modulesCompleted: 0, homeworkPassed: 0, streakDays: global.streakDays };
+      byCourse.set(cid, s);
+    }
+    return s;
+  };
+  for (const cid of lessonCids) ensure(cid).lessonsCompleted++;
+  for (const cid of hwCids) ensure(cid).homeworkPassed++;
+  for (const cid of modCids) ensure(cid).modulesCompleted++;
+  return { global, byCourse };
+}
+
+/** Статистика для оценки достижения: по курсу (если привязано) или общая. */
+function statsFor(
+  courseId: string | null,
+  global: UserStats,
+  byCourse: Map<string, UserStats>,
+): UserStats {
+  if (!courseId) return global;
+  return (
+    byCourse.get(courseId) ?? {
+      lessonsCompleted: 0,
+      modulesCompleted: 0,
+      homeworkPassed: 0,
+      streakDays: global.streakDays,
+    }
+  );
+}
+
 /** Проверить и выдать достижения по текущей статистике (ТЗ §3.5). */
 async function checkAchievements(userId: string) {
-  const [stats, achievements, earnedIds] = await Promise.all([
-    q.getUserStats(userId),
+  const [{ global, byCourse }, achievements, earnedIds] = await Promise.all([
+    buildStats(userId),
     q.listAchievements(),
     q.getEarnedAchievementIds(userId),
   ]);
   const earned = new Set(earnedIds);
-  const userStats: UserStats = stats;
 
   for (const a of achievements) {
     if (earned.has(a.id)) continue;
     const parsed = conditionSchema.safeParse(a.conditionJson);
     if (!parsed.success) continue;
-    const progress = evaluateAchievement(parsed.data as AchievementCondition, userStats);
+    const stats = statsFor(a.courseId, global, byCourse);
+    const progress = evaluateAchievement(parsed.data as AchievementCondition, stats);
     if (progress.earned) {
       const granted = await q.grantAchievement(userId, a.id);
       if (granted && a.xpReward > 0) {
@@ -114,6 +159,9 @@ export interface AchievementView {
   description: string;
   icon: string | null;
   category: string | null;
+  /** null = общее достижение (группа «Общие»). */
+  courseId: string | null;
+  courseTitle: string | null;
   rarity: string;
   xpReward: number;
   current: number;
@@ -129,8 +177,8 @@ export interface AchievementsPage {
 }
 
 export async function getAchievementsPage(userId: string): Promise<AchievementsPage> {
-  const [stats, achievements, earnedIds] = await Promise.all([
-    q.getUserStats(userId),
+  const [{ global, byCourse }, achievements, earnedIds] = await Promise.all([
+    buildStats(userId),
     q.listAchievements(),
     q.getEarnedAchievementIds(userId),
   ]);
@@ -138,6 +186,7 @@ export async function getAchievementsPage(userId: string): Promise<AchievementsP
 
   const views: AchievementView[] = achievements.map((a) => {
     const parsed = conditionSchema.safeParse(a.conditionJson);
+    const stats = statsFor(a.courseId, global, byCourse);
     const progress = parsed.success
       ? evaluateAchievement(parsed.data as AchievementCondition, stats)
       : { current: 0, target: a.targetValue ?? 1, earned: false };
@@ -148,6 +197,8 @@ export async function getAchievementsPage(userId: string): Promise<AchievementsP
       description: a.description,
       icon: a.icon,
       category: a.category,
+      courseId: a.courseId,
+      courseTitle: a.course?.title ?? null,
       rarity: a.rarity,
       xpReward: a.xpReward,
       current: isEarned ? progress.target : progress.current,

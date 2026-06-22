@@ -3,7 +3,7 @@ import { listForAdmin, AchievementsAdmin } from '@/features/admin';
 export const metadata = { title: 'Достижения — Админ — SVETOZAR SCHOOL' };
 
 export default async function AdminAchievementsPage() {
-  const achievements = await listForAdmin();
+  const { achievements, courses } = await listForAdmin();
 
   return (
     <div>
@@ -13,7 +13,7 @@ export default async function AdminAchievementsPage() {
           Создание и редактирование достижений. Ученикам видны только их прогресс и награды (ТЗ §3.5).
         </p>
       </header>
-      <AchievementsAdmin achievements={achievements} />
+      <AchievementsAdmin achievements={achievements} courses={courses} />
     </div>
   );
 }

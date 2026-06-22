@@ -87,6 +87,7 @@ model Course {
   enrollments  Enrollment[]
   aiKnowledge  AiKnowledge[]
   aiSettings   AiSettings?
+  achievements Achievement[]
 
   @@map("courses")
 }
@@ -282,6 +283,7 @@ model XpEvent {
 model Achievement {
   id            String  @id @default(cuid())
   code          String  @unique
+  courseId      String? @map("course_id") // null = общее достижение (вне курса)
   title         String
   description   String
   icon          String?
@@ -294,8 +296,10 @@ model Achievement {
   targetValue   Int?    @map("target_value")
   position      Int     @default(0)
 
+  course           Course?           @relation(fields: [courseId], references: [id], onDelete: Cascade)
   userAchievements UserAchievement[]
 
+  @@index([courseId])
   @@map("achievements")
 }
 

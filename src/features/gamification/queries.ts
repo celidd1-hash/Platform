@@ -96,6 +96,8 @@ export function listAchievements() {
     select: {
       id: true,
       code: true,
+      courseId: true,
+      course: { select: { title: true } },
       title: true,
       description: true,
       icon: true,
@@ -106,6 +108,42 @@ export function listAchievements() {
       targetValue: true,
     },
   });
+}
+
+// ── Статистика по курсам (для достижений, привязанных к курсу) ──
+
+/** courseId для каждого пройденного урока пользователя (повторы = несколько уроков курса). */
+export async function completedLessonCourseIds(userId: string): Promise<string[]> {
+  const rows = await db.lessonProgress.findMany({
+    where: { userId, status: 'completed' },
+    select: { lesson: { select: { module: { select: { courseId: true } } } } },
+  });
+  return rows.map((r) => r.lesson.module.courseId);
+}
+
+/** courseId для каждого зачтённого ДЗ пользователя. */
+export async function passedHomeworkCourseIds(userId: string): Promise<string[]> {
+  const rows = await db.homework.findMany({
+    where: { userId, verdict: 'passed' },
+    select: { lesson: { select: { module: { select: { courseId: true } } } } },
+  });
+  return rows.map((r) => r.lesson.module.courseId);
+}
+
+/** courseId для каждого завершённого модуля (из xp-событий module_completed). */
+export async function completedModuleCourseIds(userId: string): Promise<string[]> {
+  const events = await db.xpEvent.findMany({
+    where: { userId, type: 'module_completed' },
+    select: { refId: true },
+  });
+  const moduleIds = events.map((e) => e.refId).filter((x): x is string => Boolean(x));
+  if (moduleIds.length === 0) return [];
+  const modules = await db.module.findMany({
+    where: { id: { in: moduleIds } },
+    select: { id: true, courseId: true },
+  });
+  const byId = new Map(modules.map((m) => [m.id, m.courseId]));
+  return moduleIds.map((id) => byId.get(id)).filter((x): x is string => Boolean(x));
 }
 
 export function getEarnedAchievementIds(userId: string) {

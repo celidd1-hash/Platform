@@ -10,26 +10,40 @@ const RARITY_LABEL: Record<string, string> = {
   legendary: 'легендарное',
 };
 
-/** Сетка достижений: все возможные + полученные, прогресс X/Y, фильтр по категории (ТЗ §3.5). */
+/** Сетка достижений: группировка по курсам (плашки) + «Общие», прогресс X/Y (ТЗ §3.5). */
 export function AchievementsGrid({ achievements }: { achievements: AchievementView[] }) {
-  const categories = ['Все', ...Array.from(new Set(achievements.map((a) => a.category ?? 'Прочее')))];
-  const [filter, setFilter] = useState('Все');
+  // Уникальные курсы (id → название) в порядке появления + признак наличия общих.
+  const courseTabs = Array.from(
+    new Map(achievements.filter((a) => a.courseId).map((a) => [a.courseId!, a.courseTitle ?? 'Курс'])).entries(),
+  );
+  const hasGeneral = achievements.some((a) => !a.courseId);
+  const [filter, setFilter] = useState<string>('all'); // 'all' | courseId | 'general'
 
   const visible =
-    filter === 'Все' ? achievements : achievements.filter((a) => (a.category ?? 'Прочее') === filter);
+    filter === 'all'
+      ? achievements
+      : filter === 'general'
+        ? achievements.filter((a) => !a.courseId)
+        : achievements.filter((a) => a.courseId === filter);
+
+  const tabs: Array<{ key: string; label: string }> = [
+    { key: 'all', label: 'Все' },
+    ...courseTabs.map(([id, title]) => ({ key: id, label: title })),
+    ...(hasGeneral ? [{ key: 'general', label: 'Общие' }] : []),
+  ];
 
   return (
     <div>
       <div className="mb-5 flex flex-wrap gap-2">
-        {categories.map((c) => (
+        {tabs.map((t) => (
           <button
-            key={c}
-            onClick={() => setFilter(c)}
+            key={t.key}
+            onClick={() => setFilter(t.key)}
             className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-              filter === c ? 'border-gold bg-[rgba(200,160,79,0.12)] text-gold-bright' : 'border-line text-muted hover:text-gold'
+              filter === t.key ? 'border-gold bg-[rgba(200,160,79,0.12)] text-gold-bright' : 'border-line text-muted hover:text-gold'
             }`}
           >
-            {c}
+            {t.label}
           </button>
         ))}
       </div>

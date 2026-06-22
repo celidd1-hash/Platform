@@ -9,6 +9,7 @@ import * as q from './queries/achievements';
 
 export const achievementSchema = z.object({
   id: z.string().optional(),
+  courseId: z.string().min(1).optional(), // не задан = общее достижение
   title: z.string().trim().min(2).max(120),
   description: z.string().trim().min(2).max(400),
   icon: z.string().trim().max(8).optional(),
@@ -24,6 +25,8 @@ export type AchievementInput = z.infer<typeof achievementSchema>;
 export interface AdminAchievement {
   id: string;
   code: string;
+  courseId: string | null;
+  courseTitle: string | null;
   title: string;
   description: string;
   icon: string | null;
@@ -34,13 +37,20 @@ export interface AdminAchievement {
   threshold: number;
 }
 
-export async function listForAdmin(): Promise<AdminAchievement[]> {
-  const rows = await q.listAchievements();
-  return rows.map((a) => {
+export interface AchievementsAdminData {
+  achievements: AdminAchievement[];
+  courses: Array<{ id: string; title: string }>;
+}
+
+export async function listForAdmin(): Promise<AchievementsAdminData> {
+  const [rows, courses] = await Promise.all([q.listAchievements(), q.listCourses()]);
+  const achievements = rows.map((a) => {
     const cond = a.conditionJson as { type?: string; threshold?: number } | null;
     return {
       id: a.id,
       code: a.code,
+      courseId: a.courseId,
+      courseTitle: a.course?.title ?? null,
       title: a.title,
       description: a.description,
       icon: a.icon,
@@ -51,14 +61,20 @@ export async function listForAdmin(): Promise<AdminAchievement[]> {
       threshold: cond?.threshold ?? a.targetValue ?? 1,
     };
   });
+  return { achievements, courses };
 }
 
 export async function saveAchievement(
   adminId: string,
   input: AchievementInput,
 ): Promise<ActionResult<null>> {
+  // Привязка к курсу опциональна; если задана — курс должен существовать.
+  const courseId = input.courseId ?? null;
+  if (courseId && !(await q.courseExists(courseId))) return fail('Курс не найден');
+
   const conditionJson = { type: input.conditionType, threshold: input.threshold };
   const common = {
+    courseId,
     title: input.title,
     description: input.description,
     icon: input.icon?.trim() || null,

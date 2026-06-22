@@ -3,12 +3,23 @@ import { Prisma } from '@prisma/client';
 
 /** Доступ к БД для CRUD достижений админом (ТЗ §3.5). Prisma в queries/ — разрешено линтером. */
 
+/** Курсы для привязки достижений (живые). */
+export function listCourses() {
+  return db.course.findMany({
+    where: { deletedAt: null },
+    orderBy: { title: 'asc' },
+    select: { id: true, title: true },
+  });
+}
+
 export function listAchievements() {
   return db.achievement.findMany({
     orderBy: { position: 'asc' },
     select: {
       id: true,
       code: true,
+      courseId: true,
+      course: { select: { title: true } },
       title: true,
       description: true,
       icon: true,
@@ -24,6 +35,7 @@ export function listAchievements() {
 
 export function createAchievement(data: {
   code: string;
+  courseId: string | null;
   title: string;
   description: string;
   icon: string | null;
@@ -40,6 +52,7 @@ export function createAchievement(data: {
 export function updateAchievement(
   id: string,
   data: {
+    courseId: string | null;
     title: string;
     description: string;
     icon: string | null;
@@ -51,6 +64,11 @@ export function updateAchievement(
   },
 ) {
   return db.achievement.update({ where: { id }, data });
+}
+
+/** Проверка, что курс существует (для привязки достижения). */
+export function courseExists(courseId: string) {
+  return db.course.findFirst({ where: { id: courseId, deletedAt: null }, select: { id: true } });
 }
 
 export function deleteAchievement(id: string) {
