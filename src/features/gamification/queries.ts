@@ -166,7 +166,7 @@ export async function grantAchievement(userId: string, achievementId: string) {
 
 export function getLeaderboardAllTime(limit: number) {
   return db.user.findMany({
-    where: { isPublicInRating: true },
+    where: { isPublicInRating: true, deletedAt: null },
     orderBy: { xp: 'desc' },
     take: limit,
     select: { id: true, name: true, avatarUrl: true, xp: true, streakDays: true },
@@ -184,7 +184,7 @@ export async function getLeaderboardSince(since: Date, limit: number) {
   });
   const userIds = grouped.map((g) => g.userId);
   const users = await db.user.findMany({
-    where: { id: { in: userIds }, isPublicInRating: true },
+    where: { id: { in: userIds }, isPublicInRating: true, deletedAt: null },
     select: { id: true, name: true, avatarUrl: true, streakDays: true },
   });
   const byId = new Map(users.map((u) => [u.id, u]));

@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { fail, type ActionResult } from '@/lib/utils';
 import { requireAdmin } from './guard';
-import { grantAccess, revokeAccess, setBlocked } from './students';
+import { grantAccess, revokeAccess, setBlocked, deleteStudent } from './students';
 
 /** Server actions кабинетов учеников (ТЗ §3.7). Каждое проверяет роль admin на сервере. */
 
@@ -27,6 +27,15 @@ export async function revokeAccessAction(userId: string, courseId: string): Prom
   if (!parsed.success) return fail('Некорректные данные');
   const res = await revokeAccess(admin.id, parsed.data.userId, parsed.data.courseId);
   if (res.ok) revalidatePath(`/admin/students/${userId}`);
+  return res;
+}
+
+export async function deleteStudentAction(userId: string): Promise<ActionResult<null>> {
+  const admin = await requireAdmin();
+  if (!admin) return fail('Доступ только для администратора');
+  if (typeof userId !== 'string' || !userId) return fail('Некорректные данные');
+  const res = await deleteStudent(admin.id, userId);
+  if (res.ok) revalidatePath('/admin/students');
   return res;
 }
 

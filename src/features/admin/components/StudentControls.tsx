@@ -1,7 +1,49 @@
 'use client';
 
-import { useTransition } from 'react';
-import { grantAccessAction, revokeAccessAction, setBlockedAction } from '../student-actions';
+import { useState, useTransition } from 'react';
+import {
+  grantAccessAction,
+  revokeAccessAction,
+  setBlockedAction,
+  deleteStudentAction,
+} from '../student-actions';
+
+/** Удаление ученика (мягкое: архив + блок входа + снятие с рейтинга). С подтверждением. */
+export function DeleteStudentButton({ userId }: { userId: string }) {
+  const [confirm, setConfirm] = useState(false);
+  const [pending, start] = useTransition();
+
+  if (confirm) {
+    return (
+      <span className="flex items-center gap-1.5">
+        <span className="text-xs text-muted-2">Удалить?</span>
+        <button
+          onClick={() => start(() => void deleteStudentAction(userId))}
+          disabled={pending}
+          className="rounded-md border border-[rgba(196,90,90,0.5)] px-2 py-0.5 text-xs text-[var(--err)] transition-colors hover:bg-[rgba(196,90,90,0.1)] disabled:opacity-50"
+        >
+          Да
+        </button>
+        <button
+          onClick={() => setConfirm(false)}
+          disabled={pending}
+          className="rounded-md border border-line px-2 py-0.5 text-xs text-muted hover:text-ink disabled:opacity-50"
+        >
+          Нет
+        </button>
+      </span>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => setConfirm(true)}
+      className="rounded-md border border-[rgba(196,90,90,0.4)] px-2.5 py-1 text-xs text-[var(--err)] transition-colors hover:bg-[rgba(196,90,90,0.08)]"
+    >
+      Удалить
+    </button>
+  );
+}
 
 /** Кнопка блокировки/разблокировки ученика (ТЗ §3.7). */
 export function BlockToggle({ userId, blocked }: { userId: string; blocked: boolean }) {

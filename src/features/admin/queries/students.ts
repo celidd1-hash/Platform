@@ -9,6 +9,7 @@ export function listStudents(search: string | undefined) {
   return db.user.findMany({
     where: {
       role: 'student',
+      deletedAt: null,
       ...(search
         ? { OR: [{ name: { contains: search, mode: 'insensitive' } }, { email: { contains: search, mode: 'insensitive' } }] }
         : {}),
@@ -130,6 +131,17 @@ export function setBlocked(userId: string, blocked: boolean) {
   return db.user.update({ where: { id: userId }, data: { isBlocked: blocked } });
 }
 
+/** Мягкое удаление ученика: архив (deletedAt) + блокировка входа + снятие с рейтинга. */
+export function softDeleteStudent(userId: string) {
+  return db.user.update({
+    where: { id: userId },
+    data: { deletedAt: new Date(), isBlocked: true, isPublicInRating: false },
+  });
+}
+
 export function studentExists(userId: string) {
-  return db.user.findFirst({ where: { id: userId, role: 'student' }, select: { id: true, name: true } });
+  return db.user.findFirst({
+    where: { id: userId, role: 'student', deletedAt: null },
+    select: { id: true, name: true },
+  });
 }

@@ -150,3 +150,15 @@ export async function setBlocked(
   await writeAuditLog({ actorId: adminId, action: blocked ? 'user_block' : 'user_unblock', targetType: 'user', targetId: userId });
   return ok({ blocked });
 }
+
+/**
+ * Мягкое удаление ученика (ТЗ §3.7): уходит в архив — вход закрыт, убран из рейтингов,
+ * не виден в списке. Данные (прогресс/ДЗ/доступы) сохраняются, действие пишется в аудит.
+ */
+export async function deleteStudent(adminId: string, userId: string): Promise<ActionResult<null>> {
+  const student = await q.studentExists(userId);
+  if (!student) return fail('Ученик не найден');
+  await q.softDeleteStudent(userId);
+  await writeAuditLog({ actorId: adminId, action: 'user_delete', targetType: 'user', targetId: userId, meta: { name: student.name } });
+  return ok(null);
+}

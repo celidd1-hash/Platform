@@ -36,6 +36,7 @@ model User {
   emailVerifiedAt DateTime? @map("email_verified_at")
   telegramChatId  String?   @map("telegram_chat_id")
   notifyPrefs     Json?     @map("notify_prefs")
+  deletedAt       DateTime? @map("deleted_at") // мягкое удаление: архив, вход закрыт, вне рейтинга
   createdAt       DateTime  @default(now()) @map("created_at")
 
   enrollments      Enrollment[]

@@ -14,7 +14,7 @@ export type { DashboardData } from './stats';
 // Кабинеты учеников
 export { listStudents, getStudentCabinet } from './students';
 export type { StudentRow, StudentCabinet } from './students';
-export { BlockToggle, AccessToggle } from './components/StudentControls';
+export { BlockToggle, AccessToggle, DeleteStudentButton } from './components/StudentControls';
 
 // Обучение ИИ-агента
 export { getAiTraining } from './ai-training';
