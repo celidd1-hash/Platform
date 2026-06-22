@@ -43,6 +43,19 @@ const PERSONAL: NavItem[] = [
   },
 ];
 
+/** Строка лого: буквы распределяются по фиксированной ширине (точное выравнивание по краям). */
+function Spread({ text, className = '' }: { text: string; className?: string }) {
+  return (
+    <span className={`flex justify-between ${className}`} aria-label={text}>
+      {Array.from(text).map((ch, i) => (
+        <span key={i} aria-hidden>
+          {ch === ' ' ? ' ' : ch}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 function NavLink({ item }: { item: NavItem }) {
   return (
     <Link
@@ -69,11 +82,11 @@ export function Sidebar({
   return (
     <aside className="relative z-10 flex w-64 flex-col border-r border-line bg-gradient-to-b from-[rgba(18,16,23,0.86)] to-[rgba(8,7,10,0.92)] p-5">
       <div className="mb-8 flex items-center gap-3">
-        <BrandMark size={48} />
-        <div className="font-label leading-tight text-center">
-          <div className="text-xl tracking-[7px] [text-indent:7px] text-gold-bright">SVETOZAR</div>
-          <div className="mt-1 text-[15px] tracking-[17px] [text-indent:17px] text-muted">SCHOOL</div>
-          <div className="mt-1.5 text-[11px] tracking-[6px] [text-indent:6px] text-muted-2">ПУТЬ МАСТЕРА</div>
+        <BrandMark size={54} />
+        <div className="w-[150px] font-label leading-tight">
+          <Spread text="SVETOZAR" className="text-lg text-gold-bright" />
+          <Spread text="SCHOOL" className="mt-1 text-sm text-muted" />
+          <Spread text="ПУТЬ МАСТЕРА" className="mt-1.5 text-[11px] text-muted-2" />
         </div>
       </div>
 
