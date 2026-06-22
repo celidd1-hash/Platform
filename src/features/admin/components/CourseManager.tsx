@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useActionState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { archiveAction } from '../actions';
 import { saveModuleAction, saveLessonAction, type EditState } from '../course-edit-actions';
 import type { AdminCourseNode, TargetType } from '../service';
@@ -17,9 +18,13 @@ const addInputCls =
 function AddModuleRow({ courseId }: { courseId: string }) {
   const [state, action] = useActionState(saveModuleAction, addInitial);
   const formRef = useRef<HTMLFormElement>(null);
+  const router = useRouter();
   useEffect(() => {
-    if (state.status === 'ok') formRef.current?.reset();
-  }, [state]);
+    if (state.status === 'ok') {
+      formRef.current?.reset();
+      router.refresh(); // показать новый модуль в списке сразу
+    }
+  }, [state, router]);
   return (
     <form
       ref={formRef}
@@ -27,7 +32,13 @@ function AddModuleRow({ courseId }: { courseId: string }) {
       className="flex items-center gap-2 rounded-xl border border-dashed border-line px-4 py-2.5"
     >
       <input type="hidden" name="courseId" value={courseId} />
-      <input name="title" placeholder="Название нового модуля" className={addInputCls} />
+      <input
+        name="title"
+        required
+        minLength={2}
+        placeholder="Название нового модуля"
+        className={addInputCls}
+      />
       <button className="flex-none rounded-lg border border-gold/40 px-3 py-1.5 text-xs text-gold-bright hover:bg-[rgba(200,160,79,0.08)]">
         + Модуль
       </button>
@@ -40,9 +51,13 @@ function AddModuleRow({ courseId }: { courseId: string }) {
 function AddLessonRow({ moduleId }: { moduleId: string }) {
   const [state, action] = useActionState(saveLessonAction, addInitial);
   const formRef = useRef<HTMLFormElement>(null);
+  const router = useRouter();
   useEffect(() => {
-    if (state.status === 'ok') formRef.current?.reset();
-  }, [state]);
+    if (state.status === 'ok') {
+      formRef.current?.reset();
+      router.refresh(); // показать новый урок в списке сразу (с кнопками, как у остальных)
+    }
+  }, [state, router]);
   return (
     <form
       ref={formRef}
@@ -51,7 +66,13 @@ function AddLessonRow({ moduleId }: { moduleId: string }) {
     >
       <input type="hidden" name="moduleId" value={moduleId} />
       <input type="hidden" name="requiresNote" value="on" />
-      <input name="title" placeholder="Название нового урока" className={addInputCls} />
+      <input
+        name="title"
+        required
+        minLength={2}
+        placeholder="Название нового урока"
+        className={addInputCls}
+      />
       <button className="flex-none rounded-lg border border-line px-3 py-1.5 text-xs text-muted hover:text-gold">
         + Урок
       </button>
