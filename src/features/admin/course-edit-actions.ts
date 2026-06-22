@@ -56,6 +56,7 @@ export async function saveModuleAction(_prev: EditState, formData: FormData): Pr
   const res = await saveModule(admin.id, parsed.data);
   if (!res.ok) return { status: 'error', message: res.error };
   revalidatePath(`/admin/courses/${parsed.data.courseId}`);
+  revalidatePath('/admin/courses'); // обновить список курсов (добавление модуля прямо из списка)
   return { status: 'ok', message: 'Модуль сохранён' };
 }
 
@@ -88,6 +89,7 @@ export async function saveLessonAction(_prev: EditState, formData: FormData): Pr
     if (typeof lesson === 'string' && lesson) redirect(`/admin/courses/${lesson}`);
   }
   revalidatePath(`/admin/lesson/${res.data.id}/edit`);
+  revalidatePath('/admin/courses'); // обновить список курсов (добавление урока прямо из списка)
   return { status: 'ok', message: 'Урок сохранён' };
 }
 
