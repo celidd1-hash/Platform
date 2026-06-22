@@ -99,8 +99,9 @@ model Module {
   isArchived Boolean  @default(false) @map("is_archived")
   deletedAt  DateTime? @map("deleted_at")
 
-  course  Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  lessons Lesson[]
+  course      Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons     Lesson[]
+  aiKnowledge AiKnowledge[]
 
   @@index([courseId, position])
   @@map("modules")
@@ -230,6 +231,7 @@ model Homework {
 model AiKnowledge {
   id        String   @id @default(cuid())
   courseId  String   @map("course_id")
+  moduleId  String?  @map("module_id") // привязка к модулю; null = общая база курса
   lessonId  String?  @map("lesson_id")
   title     String
   contentMd String   @map("content_md")
@@ -237,9 +239,11 @@ model AiKnowledge {
   createdAt DateTime @default(now()) @map("created_at")
 
   course Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  module Module? @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   lesson Lesson? @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 
   @@index([courseId])
+  @@index([moduleId])
   @@index([lessonId])
   @@map("ai_knowledge")
 }

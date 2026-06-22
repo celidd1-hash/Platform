@@ -18,6 +18,7 @@ export const settingsSchema = z.object({
 
 export const knowledgeSchema = z.object({
   courseId: z.string().min(1),
+  moduleId: z.string().min(1).optional(), // не задан = общая база курса
   title: z.string().trim().min(2).max(200),
   contentMd: z.string().trim().min(1).max(20_000),
 });
@@ -25,8 +26,15 @@ export const knowledgeSchema = z.object({
 export interface AiTrainingData {
   courses: Array<{ id: string; title: string }>;
   selected: { id: string; title: string } | null;
+  modules: Array<{ id: string; title: string }>;
   settings: { passScore: number; strictness: string; promptTemplate: string | null };
-  knowledge: Array<{ id: string; title: string; contentMd: string; createdAt: Date }>;
+  knowledge: Array<{
+    id: string;
+    title: string;
+    contentMd: string;
+    moduleTitle: string | null;
+    createdAt: Date;
+  }>;
 }
 
 export async function getAiTraining(courseId?: string): Promise<AiTrainingData> {
@@ -36,13 +44,15 @@ export async function getAiTraining(courseId?: string): Promise<AiTrainingData> 
     return {
       courses,
       selected: null,
+      modules: [],
       settings: { passScore: HOMEWORK.DEFAULT_PASS_SCORE, strictness: HOMEWORK.DEFAULT_STRICTNESS, promptTemplate: null },
       knowledge: [],
     };
   }
 
-  const [course, settings, knowledge] = await Promise.all([
+  const [course, modules, settings, knowledge] = await Promise.all([
     q.getCourse(selectedId),
+    q.listModules(selectedId),
     q.getSettings(selectedId),
     q.listKnowledge(selectedId),
   ]);
@@ -50,12 +60,19 @@ export async function getAiTraining(courseId?: string): Promise<AiTrainingData> 
   return {
     courses,
     selected: course,
+    modules,
     settings: settings ?? {
       passScore: HOMEWORK.DEFAULT_PASS_SCORE,
       strictness: HOMEWORK.DEFAULT_STRICTNESS,
       promptTemplate: null,
     },
-    knowledge: knowledge.map((k) => ({ id: k.id, title: k.title, contentMd: k.contentMd, createdAt: k.createdAt })),
+    knowledge: knowledge.map((k) => ({
+      id: k.id,
+      title: k.title,
+      contentMd: k.contentMd,
+      moduleTitle: k.module?.title ?? null,
+      createdAt: k.createdAt,
+    })),
   };
 }
 
@@ -76,7 +93,17 @@ export async function addKnowledge(
   adminId: string,
   input: z.infer<typeof knowledgeSchema>,
 ): Promise<ActionResult<null>> {
-  await q.createKnowledge({ courseId: input.courseId, title: input.title, contentMd: input.contentMd });
+  // Привязка к модулю опциональна; если задана — модуль должен принадлежать этому курсу.
+  if (input.moduleId) {
+    const belongs = await q.moduleBelongsToCourse(input.moduleId, input.courseId);
+    if (!belongs) return fail('Модуль не относится к этому курсу');
+  }
+  await q.createKnowledge({
+    courseId: input.courseId,
+    moduleId: input.moduleId ?? null,
+    title: input.title,
+    contentMd: input.contentMd,
+  });
   await writeAuditLog({ actorId: adminId, action: 'ai_knowledge_add', targetType: 'course', targetId: input.courseId });
   return ok(null);
 }

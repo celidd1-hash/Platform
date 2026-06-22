@@ -30,6 +30,7 @@ export async function addKnowledgeAction(_prev: AiFormState, formData: FormData)
   if (!admin) return { status: 'error', message: 'Доступ только для администратора' };
   const parsed = knowledgeSchema.safeParse({
     courseId: formData.get('courseId'),
+    moduleId: formData.get('moduleId') || undefined,
     title: formData.get('title'),
     contentMd: formData.get('contentMd'),
   });

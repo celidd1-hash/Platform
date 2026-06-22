@@ -15,7 +15,7 @@ export function getLessonForCheck(lessonId: string) {
       title: true,
       requiresNote: true,
       minNoteLength: true,
-      module: { select: { course: { select: { id: true } } } },
+      module: { select: { id: true, course: { select: { id: true } } } },
     },
   });
 }
@@ -29,10 +29,10 @@ export function hasActiveEnrollment(userId: string, courseId: string) {
     .then(Boolean);
 }
 
-/** База знаний для проверки: общая по курсу + уточнение по уроку (ТЗ §3.4). */
-export function getKnowledgeBase(courseId: string, lessonId: string) {
+/** База знаний для проверки: общая по курсу (moduleId = null) + база модуля урока (ТЗ §3.4). */
+export function getKnowledgeBase(courseId: string, moduleId: string) {
   return db.aiKnowledge.findMany({
-    where: { courseId, OR: [{ lessonId: null }, { lessonId }] },
+    where: { courseId, OR: [{ moduleId: null }, { moduleId }] },
     orderBy: { createdAt: 'asc' },
     select: { title: true, contentMd: true },
   });

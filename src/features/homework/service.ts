@@ -46,7 +46,7 @@ export async function submitHomework(
   const attemptNo = (await q.countAttempts(userId, lessonId)) + 1;
 
   const [knowledge, settings] = await Promise.all([
-    q.getKnowledgeBase(courseId, lessonId),
+    q.getKnowledgeBase(courseId, lesson.module.id),
     q.getAiSettings(courseId),
   ]);
   const passScore = settings?.passScore ?? HOMEWORK.DEFAULT_PASS_SCORE;

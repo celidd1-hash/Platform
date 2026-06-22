@@ -144,7 +144,12 @@ export function AiTrainingPanel({ data }: { data: AiTrainingData }) {
               <div key={k.id} className="rounded-lg border border-line bg-panel px-4 py-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="text-sm text-ink">{k.title}</div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-ink">{k.title}</span>
+                      <span className="flex-none rounded-md border border-line px-2 py-0.5 text-[10px] uppercase tracking-[1px] text-muted-2">
+                        {k.moduleTitle ?? 'Весь курс'}
+                      </span>
+                    </div>
                     <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-xs text-muted">{k.contentMd}</p>
                   </div>
                   <button
@@ -166,6 +171,20 @@ export function AiTrainingPanel({ data }: { data: AiTrainingData }) {
           <form action={kbAction} className="flex flex-col gap-3 rounded-token border border-line bg-panel p-5">
             <input type="hidden" name="courseId" value={courseId} />
             <div className="sectlabel mb-1">Добавить материал</div>
+            <label className="block">
+              <span className={labelCls}>Привязка</span>
+              <select name="moduleId" defaultValue="" className={inputCls}>
+                <option value="">Весь курс (общая база)</option>
+                {data.modules.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.title}
+                  </option>
+                ))}
+              </select>
+              <span className="mt-1 block text-xs text-muted-2">
+                При проверке ДЗ агент получит общую базу курса + базу модуля этого урока.
+              </span>
+            </label>
             <input name="title" placeholder="Заголовок (напр. «Тезисы модуля 1»)" className={inputCls} />
             <textarea
               name="contentMd"
