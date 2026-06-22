@@ -83,7 +83,7 @@ export function createModule(courseId: string, title: string, position: number) 
   return db.module.create({ data: { courseId, title, position }, select: { id: true } });
 }
 
-export function updateModule(id: string, data: { title: string; position: number }) {
+export function updateModule(id: string, data: { title: string; position?: number }) {
   return db.module.update({ where: { id }, data });
 }
 

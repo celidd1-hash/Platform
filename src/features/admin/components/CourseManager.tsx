@@ -14,6 +14,60 @@ const addInitial: EditState = { status: 'idle' };
 const addInputCls =
   'flex-1 rounded-lg border border-line bg-bg-2 px-3 py-1.5 text-sm text-ink outline-none focus:border-gold';
 
+/** Название модуля с инлайн-переименованием. */
+function ModuleTitle({
+  courseId,
+  moduleId,
+  title,
+}: {
+  courseId: string;
+  moduleId: string;
+  title: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [state, action] = useActionState(saveModuleAction, addInitial);
+  const router = useRouter();
+  useEffect(() => {
+    if (state.status === 'ok') {
+      setEditing(false);
+      router.refresh();
+    }
+  }, [state, router]);
+
+  if (!editing) {
+    return (
+      <div className="flex min-w-0 items-center gap-2">
+        <span className="truncate font-label text-sm tracking-[1px] text-gold">{title}</span>
+        <button
+          onClick={() => setEditing(true)}
+          className="flex-none rounded-md border border-line px-2 py-0.5 text-[11px] text-muted transition-colors hover:text-gold"
+        >
+          Переименовать
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <form action={action} className="flex min-w-0 flex-1 items-center gap-2">
+      <input type="hidden" name="id" value={moduleId} />
+      <input type="hidden" name="courseId" value={courseId} />
+      <input name="title" defaultValue={title} required minLength={2} autoFocus className={`${addInputCls} max-w-md`} />
+      <button className="flex-none rounded-md border border-gold/40 px-2.5 py-1 text-xs text-gold-bright hover:bg-[rgba(200,160,79,0.08)]">
+        Сохранить
+      </button>
+      <button
+        type="button"
+        onClick={() => setEditing(false)}
+        className="flex-none rounded-md border border-line px-2.5 py-1 text-xs text-muted hover:text-ink"
+      >
+        Отмена
+      </button>
+      {state.status === 'error' && <span className="text-xs text-[var(--err)]">{state.message}</span>}
+    </form>
+  );
+}
+
 /** Быстрое добавление модуля прямо в списке курсов. */
 function AddModuleRow({ courseId }: { courseId: string }) {
   const [state, action] = useActionState(saveModuleAction, addInitial);
@@ -166,7 +220,7 @@ export function CourseManager({ courses }: { courses: AdminCourseNode[] }) {
             {course.modules.map((module) => (
               <div key={module.id} className="rounded-xl border border-line bg-bg-2">
                 <div className="flex items-center justify-between gap-3 px-4 py-2.5">
-                  <span className="font-label text-sm tracking-[1px] text-gold">{module.title}</span>
+                  <ModuleTitle courseId={course.id} moduleId={module.id} title={module.title} />
                   <RowControls
                     target="module"
                     id={module.id}

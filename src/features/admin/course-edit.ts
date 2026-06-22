@@ -86,9 +86,10 @@ export async function saveModule(
   input: z.infer<typeof moduleSchema>,
 ): Promise<ActionResult<{ id: string }>> {
   if (input.id) {
+    // Позицию трогаем только если её явно передали — иначе переименование сбросило бы порядок.
     await q.updateModule(input.id, {
       title: input.title,
-      position: input.position ?? 0,
+      ...(input.position !== undefined ? { position: input.position } : {}),
     });
     await writeAuditLog({ actorId: adminId, action: 'module_update', targetType: 'module', targetId: input.id });
     return ok({ id: input.id });
