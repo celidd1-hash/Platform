@@ -83,7 +83,7 @@ export function Sidebar({
     <aside className="relative z-10 flex w-64 flex-col border-r border-line bg-gradient-to-b from-[rgba(18,16,23,0.86)] to-[rgba(8,7,10,0.92)] p-5">
       <div className="mb-8 flex items-center gap-3">
         <BrandMark size={54} />
-        <div className="w-[150px] font-label leading-tight">
+        <div className="w-[128px] font-label leading-tight">
           <Spread text="SVETOZAR" className="text-lg text-gold-bright" />
           <Spread text="SCHOOL" className="mt-1 text-sm text-muted" />
           <Spread text="ПУТЬ МАСТЕРА" className="mt-1.5 text-[11px] text-muted-2" />
