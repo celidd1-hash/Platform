@@ -19,8 +19,8 @@ export interface StudentRow {
   createdAt: Date;
 }
 
-export async function listStudents(search?: string): Promise<StudentRow[]> {
-  const rows = await q.listStudents(search?.trim() || undefined);
+export async function listStudents(search?: string, archived = false): Promise<StudentRow[]> {
+  const rows = await q.listStudents(search?.trim() || undefined, archived);
   return rows.map((r) => ({
     id: r.id,
     name: r.name,
@@ -160,5 +160,14 @@ export async function deleteStudent(adminId: string, userId: string): Promise<Ac
   if (!student) return fail('Ученик не найден');
   await q.softDeleteStudent(userId);
   await writeAuditLog({ actorId: adminId, action: 'user_delete', targetType: 'user', targetId: userId, meta: { name: student.name } });
+  return ok(null);
+}
+
+/** Возврат ученика из архива (ТЗ §3.7): снова активен, в рейтинге, вход открыт. */
+export async function restoreStudent(adminId: string, userId: string): Promise<ActionResult<null>> {
+  const student = await q.archivedStudentExists(userId);
+  if (!student) return fail('Архивный ученик не найден');
+  await q.restoreStudent(userId);
+  await writeAuditLog({ actorId: adminId, action: 'user_restore', targetType: 'user', targetId: userId, meta: { name: student.name } });
   return ok(null);
 }

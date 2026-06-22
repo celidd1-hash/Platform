@@ -1,21 +1,50 @@
 import Link from 'next/link';
-import { listStudents, DeleteStudentButton } from '@/features/admin';
+import { listStudents, DeleteStudentButton, RestoreStudentButton } from '@/features/admin';
 
 export const metadata = { title: 'Ученики — Админ — SVETOZAR SCHOOL' };
 
 export default async function AdminStudentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; view?: string }>;
 }) {
-  const { q } = await searchParams;
-  const students = await listStudents(q);
+  const { q, view } = await searchParams;
+  const archived = view === 'archived';
+  const students = await listStudents(q, archived);
+
+  const tabHref = (v: 'active' | 'archived') => {
+    const sp = new URLSearchParams();
+    if (q) sp.set('q', q);
+    if (v === 'archived') sp.set('view', 'archived');
+    const qs = sp.toString();
+    return qs ? `/admin/students?${qs}` : '/admin/students';
+  };
 
   return (
     <div>
       <h1 className="mb-4 font-display text-3xl font-semibold">Ученики</h1>
 
+      <div className="mb-5 flex gap-2">
+        <Link
+          href={tabHref('active')}
+          className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+            !archived ? 'border-gold bg-[rgba(200,160,79,0.12)] text-gold-bright' : 'border-line text-muted hover:text-gold'
+          }`}
+        >
+          Активные
+        </Link>
+        <Link
+          href={tabHref('archived')}
+          className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+            archived ? 'border-gold bg-[rgba(200,160,79,0.12)] text-gold-bright' : 'border-line text-muted hover:text-gold'
+          }`}
+        >
+          Архив
+        </Link>
+      </div>
+
       <form className="mb-5" action="/admin/students">
+        {archived && <input type="hidden" name="view" value="archived" />}
         <input
           name="q"
           defaultValue={q ?? ''}
@@ -44,16 +73,22 @@ export default async function AdminStudentsPage({
             <span className="text-center text-muted">{s.courses}</span>
             <span className="text-center text-gold-bright">{s.xp}</span>
             <span className="text-center">
-              {s.isBlocked ? (
+              {archived ? (
+                <span className="text-[var(--warn)]">в архиве</span>
+              ) : s.isBlocked ? (
                 <span className="text-[var(--err)]">заблокирован</span>
               ) : (
                 <span className="text-ok">активен</span>
               )}
             </span>
-            <DeleteStudentButton userId={s.id} />
+            {archived ? <RestoreStudentButton userId={s.id} /> : <DeleteStudentButton userId={s.id} />}
           </div>
         ))}
-        {students.length === 0 && <div className="px-5 py-6 text-sm text-muted">Никого не найдено</div>}
+        {students.length === 0 && (
+          <div className="px-5 py-6 text-sm text-muted">
+            {archived ? 'Архив пуст' : 'Никого не найдено'}
+          </div>
+        )}
       </div>
     </div>
   );

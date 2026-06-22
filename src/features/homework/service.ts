@@ -164,3 +164,41 @@ export async function getHistory(userId: string, lessonId: string): Promise<Home
 export async function hasSubmittedHomework(userId: string, lessonId: string): Promise<boolean> {
   return (await q.countAttempts(userId, lessonId)) > 0;
 }
+
+/**
+ * Ручная оценка ДЗ куратором/ментором (ТЗ §3.7): вердикт + комментарий.
+ * При «зачтено» — урок засчитывается + XP/достижения (идемпотентно), ученику уходит оповещение.
+ */
+export async function gradeHomeworkManually(
+  homeworkId: string,
+  verdict: 'passed' | 'needs_work',
+  feedback: string | null,
+): Promise<ActionResult<null>> {
+  const hw = await q.getHomeworkForGrade(homeworkId);
+  if (!hw) return fail('ДЗ не найдено');
+
+  await q.setHomeworkVerdict(homeworkId, verdict, feedback);
+
+  if (verdict === HOMEWORK_VERDICT.PASSED) {
+    await q.completeLesson(hw.userId, hw.lessonId);
+    await onLessonCompleted(hw.userId, hw.lessonId);
+    await onHomeworkPassed(hw.userId, hw.lessonId, 0);
+  }
+
+  await notifyHomeworkResult(hw.userId, {
+    verdict,
+    score: null,
+    lessonTitle: hw.lesson.title,
+    feedback,
+  }).catch(() => undefined);
+
+  return ok(null);
+}
+
+/** Переместить ДЗ в корзину (мягкое удаление куратором). */
+export async function trashHomework(homeworkId: string): Promise<ActionResult<null>> {
+  const hw = await q.getHomeworkForGrade(homeworkId);
+  if (!hw) return fail('ДЗ не найдено');
+  await q.setHomeworkDeleted(homeworkId, true);
+  return ok(null);
+}

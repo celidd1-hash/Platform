@@ -79,6 +79,34 @@ export function createHomework(data: {
   });
 }
 
+/** ДЗ с контекстом для ручной оценки куратором (получатель, урок). */
+export function getHomeworkForGrade(homeworkId: string) {
+  return db.homework.findUnique({
+    where: { id: homeworkId },
+    select: { id: true, userId: true, lessonId: true, lesson: { select: { title: true } } },
+  });
+}
+
+/** Ручная установка вердикта и комментария куратора. */
+export function setHomeworkVerdict(
+  homeworkId: string,
+  verdict: VerdictStr,
+  feedback: string | null,
+) {
+  return db.homework.update({
+    where: { id: homeworkId },
+    data: { verdict: verdict as HomeworkVerdict, feedback },
+  });
+}
+
+/** Переместить ДЗ в корзину / вернуть (мягкое удаление). */
+export function setHomeworkDeleted(homeworkId: string, deleted: boolean) {
+  return db.homework.update({
+    where: { id: homeworkId },
+    data: { deletedAt: deleted ? new Date() : null },
+  });
+}
+
 /** Засчитать урок (видео просмотрено + ДЗ зачтено / временно при fallback). */
 export function completeLesson(userId: string, lessonId: string) {
   const now = new Date();

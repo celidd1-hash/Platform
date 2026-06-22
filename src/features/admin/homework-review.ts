@@ -13,6 +13,7 @@ export interface HomeworkReviewItem {
   score: number | null;
   feedback: string | null;
   attemptNo: number;
+  trashed: boolean;
   createdAt: Date;
 }
 
@@ -41,6 +42,7 @@ export async function getHomeworkReview(filter: {
       score: h.score,
       feedback: h.feedback,
       attemptNo: h.attemptNo,
+      trashed: h.deletedAt != null,
       createdAt: h.createdAt,
     })),
   };

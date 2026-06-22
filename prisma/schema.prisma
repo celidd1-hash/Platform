@@ -217,6 +217,7 @@ model Homework {
   score     Int?
   feedback  String?
   attemptNo Int              @default(1) @map("attempt_no")
+  deletedAt DateTime?        @map("deleted_at") // корзина: ДЗ перемещено в корзину куратором
   createdAt DateTime         @default(now()) @map("created_at")
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)

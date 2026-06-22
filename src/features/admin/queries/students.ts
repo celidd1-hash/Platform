@@ -5,11 +5,11 @@ import { EnrollmentStatus } from '@prisma/client';
  * Доступ к БД для кабинетов учеников (ТЗ §3.7). Prisma-доступ в queries/ — разрешено линтером.
  */
 
-export function listStudents(search: string | undefined) {
+export function listStudents(search: string | undefined, archived = false) {
   return db.user.findMany({
     where: {
       role: 'student',
-      deletedAt: null,
+      deletedAt: archived ? { not: null } : null,
       ...(search
         ? { OR: [{ name: { contains: search, mode: 'insensitive' } }, { email: { contains: search, mode: 'insensitive' } }] }
         : {}),
@@ -136,6 +136,22 @@ export function softDeleteStudent(userId: string) {
   return db.user.update({
     where: { id: userId },
     data: { deletedAt: new Date(), isBlocked: true, isPublicInRating: false },
+  });
+}
+
+/** Возврат ученика из архива: снимаем deletedAt, разблокируем, возвращаем в рейтинг. */
+export function restoreStudent(userId: string) {
+  return db.user.update({
+    where: { id: userId },
+    data: { deletedAt: null, isBlocked: false, isPublicInRating: true },
+  });
+}
+
+/** Существует ли архивированный ученик (для восстановления). */
+export function archivedStudentExists(userId: string) {
+  return db.user.findFirst({
+    where: { id: userId, role: 'student', deletedAt: { not: null } },
+    select: { id: true, name: true },
   });
 }
 

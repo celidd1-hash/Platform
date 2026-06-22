@@ -14,7 +14,7 @@ export type { DashboardData } from './stats';
 // Кабинеты учеников
 export { listStudents, getStudentCabinet } from './students';
 export type { StudentRow, StudentCabinet } from './students';
-export { BlockToggle, AccessToggle, DeleteStudentButton } from './components/StudentControls';
+export { BlockToggle, AccessToggle, DeleteStudentButton, RestoreStudentButton } from './components/StudentControls';
 
 // Обучение ИИ-агента
 export { getAiTraining } from './ai-training';
@@ -24,6 +24,7 @@ export { AiTrainingPanel } from './components/AiTrainingPanel';
 // Проверка ДЗ
 export { getHomeworkReview } from './homework-review';
 export type { HomeworkReviewData, HomeworkReviewItem } from './homework-review';
+export { HomeworkReviewCard } from './components/HomeworkReviewCard';
 
 // Достижения (CRUD)
 export { listForAdmin } from './achievements-admin';

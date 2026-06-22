@@ -6,7 +6,22 @@ import {
   revokeAccessAction,
   setBlockedAction,
   deleteStudentAction,
+  restoreStudentAction,
 } from '../student-actions';
+
+/** Возврат ученика из архива. */
+export function RestoreStudentButton({ userId }: { userId: string }) {
+  const [pending, start] = useTransition();
+  return (
+    <button
+      onClick={() => start(() => void restoreStudentAction(userId))}
+      disabled={pending}
+      className="rounded-md border border-gold/40 px-2.5 py-1 text-xs text-gold-bright transition-colors hover:bg-[rgba(200,160,79,0.08)] disabled:opacity-50"
+    >
+      Вернуть из архива
+    </button>
+  );
+}
 
 /** Удаление ученика (мягкое: архив + блок входа + снятие с рейтинга). С подтверждением. */
 export function DeleteStudentButton({ userId }: { userId: string }) {

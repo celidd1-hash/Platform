@@ -15,8 +15,13 @@ export function listCourses() {
 
 export function listHomework(filter: { courseId?: string; verdict?: string }) {
   const where: Prisma.HomeworkWhereInput = {};
-  if (filter.verdict && ['passed', 'needs_work', 'pending'].includes(filter.verdict)) {
-    where.verdict = filter.verdict as HomeworkVerdict;
+  if (filter.verdict === 'trashed') {
+    where.deletedAt = { not: null }; // корзина
+  } else {
+    where.deletedAt = null; // обычные вкладки скрывают корзину
+    if (['passed', 'needs_work', 'pending'].includes(filter.verdict ?? '')) {
+      where.verdict = filter.verdict as HomeworkVerdict;
+    }
   }
   if (filter.courseId) {
     where.lesson = { module: { courseId: filter.courseId } };
@@ -32,6 +37,7 @@ export function listHomework(filter: { courseId?: string; verdict?: string }) {
       score: true,
       feedback: true,
       attemptNo: true,
+      deletedAt: true,
       createdAt: true,
       user: { select: { id: true, name: true } },
       lesson: { select: { title: true, module: { select: { course: { select: { title: true } } } } } },
