@@ -70,10 +70,10 @@ export function Sidebar({
     <aside className="relative z-10 flex w-64 flex-col border-r border-line bg-gradient-to-b from-[rgba(18,16,23,0.86)] to-[rgba(8,7,10,0.92)] p-5">
       <div className="mb-8 flex items-center gap-3">
         <BrandMark size={48} />
-        <div className="font-label leading-none">
-          <div className="text-lg tracking-[3px] text-gold-bright">SVETOZAR</div>
-          <div className="mt-1 text-[10px] tracking-[4px] text-muted">SCHOOL</div>
-          <div className="mt-1 text-[9px] tracking-[3px] text-muted-2">ПУТЬ МАСТЕРА</div>
+        <div className="font-label leading-none text-center">
+          <div className="text-lg tracking-[3px] [text-indent:3px] text-gold-bright">SVETOZAR</div>
+          <div className="mt-1 text-[13px] tracking-[4px] [text-indent:4px] text-muted">SCHOOL</div>
+          <div className="mt-1.5 text-[9px] tracking-[3px] [text-indent:3px] text-muted-2">ПУТЬ МАСТЕРА</div>
         </div>
       </div>
 
