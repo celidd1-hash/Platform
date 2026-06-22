@@ -90,7 +90,15 @@ export function AchievementsAdmin({
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_380px]">
         <section>
-          <div className="sectlabel mb-4">Достижения</div>
+          <div className="mb-4 flex items-center justify-between">
+            <div className="sectlabel">Достижения</div>
+            <button
+              onClick={() => setEditing(null)}
+              className="rounded-lg border border-gold/40 px-3 py-1.5 font-label text-xs tracking-[1px] text-gold-bright transition-colors hover:bg-[rgba(200,160,79,0.08)]"
+            >
+              + Новое достижение
+            </button>
+          </div>
           <div className="flex flex-col gap-2">
             {visible.map((a) => (
               <div
