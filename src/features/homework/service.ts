@@ -3,7 +3,7 @@ import { rateLimit } from '@/lib/rate-limit';
 import { ok, fail, type ActionResult } from '@/lib/utils';
 import { HOMEWORK, HOMEWORK_VERDICT, RATE_LIMITS } from '@/config/constants';
 import { onLessonCompleted, onHomeworkPassed } from '@/features/gamification';
-import { notifyHomeworkResult } from '@/features/telegram';
+import { notifyHomeworkResult, notifyStaffHomeworkNeedsWork } from '@/features/telegram';
 import * as q from './queries';
 
 /**
@@ -129,13 +129,22 @@ export async function submitHomework(
     await onHomeworkPassed(userId, lessonId, checkResult.score);
   }
 
-  // Оповещение в Telegram (best-effort, ТЗ §3.9) — не ломает основной поток.
+  // Оповещение ученику в Telegram (best-effort, ТЗ §3.9) — не ломает основной поток.
   await notifyHomeworkResult(userId, {
     verdict: passed ? 'passed' : 'needs_work',
     score: checkResult.score,
     lessonTitle: lesson.title,
     feedback: checkResult.feedback,
   }).catch(() => undefined);
+
+  // При «на доработку» — дополнительно оповещаем админов/кураторов (best-effort).
+  if (!passed) {
+    await notifyStaffHomeworkNeedsWork(userId, {
+      lessonTitle: lesson.title,
+      score: checkResult.score,
+      feedback: checkResult.feedback,
+    }).catch(() => undefined);
+  }
 
   return ok({
     verdict: passed ? 'passed' : 'needs_work',

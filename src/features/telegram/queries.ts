@@ -39,6 +39,20 @@ export function getUserNotify(userId: string) {
   });
 }
 
+export function getUserName(userId: string) {
+  return db.user.findUnique({ where: { id: userId }, select: { name: true } });
+}
+
+/** id админов/кураторов с привязанным Telegram — для оповещений о ДЗ на доработку. */
+export function listStaffWithTelegram() {
+  return db.user
+    .findMany({
+      where: { role: { in: ['admin', 'curator'] }, telegramChatId: { not: null }, deletedAt: null },
+      select: { id: true },
+    })
+    .then((rows) => rows.map((r) => r.id));
+}
+
 export function setNotifyPrefs(userId: string, prefs: Record<string, unknown>) {
   return db.user.update({
     where: { id: userId },

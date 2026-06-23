@@ -131,6 +131,34 @@ export async function notifyHomeworkResult(
   await notify(userId, NOTIFY_TYPES.HOMEWORK_RESULT, lines.join('\n'));
 }
 
+/**
+ * Оповещение админов/кураторов: ученик получил «на доработку» (ТЗ §3.9).
+ * Шлётся каждому сотруднику с привязанным Telegram. Best-effort.
+ */
+export async function notifyStaffHomeworkNeedsWork(
+  studentUserId: string,
+  data: { lessonTitle: string; score: number | null; feedback: string | null },
+): Promise<void> {
+  const [student, staffIds] = await Promise.all([
+    q.getUserName(studentUserId),
+    q.listStaffWithTelegram(),
+  ]);
+  if (staffIds.length === 0) return;
+
+  const lines = [
+    `<b>ДЗ на доработку</b>`,
+    `Ученик: ${student?.name ?? '—'}`,
+    `Урок: ${data.lessonTitle}`,
+    `↻ Требует доработки${data.score != null ? ` · ${data.score}/100` : ''}`,
+  ];
+  if (data.feedback) lines.push(`\n${data.feedback}`);
+  const text = lines.join('\n');
+
+  for (const staffId of staffIds) {
+    await notify(staffId, NOTIFY_TYPES.HOMEWORK_RESULT, text).catch(() => undefined);
+  }
+}
+
 export function fallbackInfo(): ActionResult<null> {
   return env.TELEGRAM_BOT_TOKEN ? ok(null) : fail('Бот не настроен');
 }

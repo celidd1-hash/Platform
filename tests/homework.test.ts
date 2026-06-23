@@ -20,6 +20,7 @@ vi.mock('@/features/gamification', () => ({
 }));
 vi.mock('@/features/telegram', () => ({
   notifyHomeworkResult: vi.fn().mockResolvedValue(undefined),
+  notifyStaffHomeworkNeedsWork: vi.fn().mockResolvedValue(undefined),
 }));
 
 import * as q from '@/features/homework/queries';

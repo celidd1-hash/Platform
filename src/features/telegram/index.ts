@@ -1,5 +1,11 @@
 /** Публичный API фичи telegram (ARCHITECTURE.md §1). */
-export { getPrefs, handleWebhookUpdate, notifyHomeworkResult, notify } from './service';
+export {
+  getPrefs,
+  handleWebhookUpdate,
+  notifyHomeworkResult,
+  notifyStaffHomeworkNeedsWork,
+  notify,
+} from './service';
 export type { ConnectInfo } from './service';
 export {
   connectTelegramAction,
