@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { listStudents, DeleteStudentButton, RestoreStudentButton } from '@/features/admin';
+import { listStudents, DeleteStudentButton, RestoreStudentButton, CreateStudentForm } from '@/features/admin';
 
 export const metadata = { title: 'Ученики — Админ — SVETOZAR SCHOOL' };
 
@@ -23,6 +23,12 @@ export default async function AdminStudentsPage({
   return (
     <div>
       <h1 className="mb-4 font-display text-3xl font-semibold">Ученики</h1>
+
+      {!archived && (
+        <div className="mb-5">
+          <CreateStudentForm />
+        </div>
+      )}
 
       <div className="mb-5 flex gap-2">
         <Link

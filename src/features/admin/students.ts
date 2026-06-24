@@ -1,5 +1,8 @@
+import { z } from 'zod';
 import { computeProgressPct } from '@/lib/progress';
+import { hashPassword } from '@/lib/password';
 import { ok, fail, type ActionResult } from '@/lib/utils';
+import { PASSWORD } from '@/config/constants';
 import { writeAuditLog } from './queries';
 import * as q from './queries/students';
 
@@ -115,6 +118,40 @@ export async function getStudentCabinet(userId: string): Promise<StudentCabinet 
       earnedAt: a.earnedAt,
     })),
   };
+}
+
+/** Контракт создания ученика админом (валидация на границе action). */
+export const createStudentSchema = z.object({
+  name: z.string().trim().min(2, 'Укажите имя').max(80),
+  email: z.string().trim().toLowerCase().email('Введите корректный email'),
+  password: z
+    .string()
+    .min(PASSWORD.MIN_LENGTH, `Пароль не короче ${PASSWORD.MIN_LENGTH} символов`)
+    .max(128, 'Пароль слишком длинный'),
+});
+
+export type CreateStudentInput = z.infer<typeof createStudentSchema>;
+
+/**
+ * Создание ученика админом вручную (ТЗ §3.7): аккаунт сразу с подтверждённым email,
+ * чтобы ученик мог войти по выданному паролю без письма. Роль всегда student.
+ * Пароль ученик может сменить сам в кабинете (profile.changePassword).
+ */
+export async function createStudent(
+  adminId: string,
+  input: CreateStudentInput,
+): Promise<ActionResult<{ id: string; email: string }>> {
+  const existing = await q.findUserByEmail(input.email);
+  if (existing) return fail('Пользователь с таким email уже существует');
+  const passwordHash = await hashPassword(input.password);
+  const user = await q.createVerifiedStudent({
+    email: input.email,
+    name: input.name,
+    passwordHash,
+  });
+  // В аудит — без email/пароля (ТЗ §6А.9): только факт и id созданного ученика.
+  await writeAuditLog({ actorId: adminId, action: 'user_create', targetType: 'user', targetId: user.id });
+  return ok({ id: user.id, email: input.email });
 }
 
 export async function grantAccess(

@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { EnrollmentStatus } from '@prisma/client';
+import { EnrollmentStatus, Role } from '@prisma/client';
 
 /**
  * Доступ к БД для кабинетов учеников (ТЗ §3.7). Prisma-доступ в queries/ — разрешено линтером.
@@ -111,6 +111,28 @@ export function getEnrolledCourseIds(userId: string) {
 }
 
 // ── Мутации ──
+
+/** Есть ли уже пользователь с таким email (любой роли, включая архивных). */
+export function findUserByEmail(email: string) {
+  return db.user.findUnique({ where: { email }, select: { id: true } });
+}
+
+/**
+ * Создать ученика админом сразу с подтверждённым email (вход без письма-подтверждения).
+ * Роль жёстко student (ТЗ §6А.3): через эту функцию нельзя выдать admin/curator.
+ */
+export function createVerifiedStudent(data: { email: string; name: string; passwordHash: string }) {
+  return db.user.create({
+    data: {
+      email: data.email,
+      name: data.name,
+      passwordHash: data.passwordHash,
+      role: Role.student,
+      emailVerifiedAt: new Date(),
+    },
+    select: { id: true },
+  });
+}
 
 export function grantEnrollment(userId: string, courseId: string, grantedById: string) {
   return db.enrollment.upsert({
