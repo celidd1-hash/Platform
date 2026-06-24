@@ -52,6 +52,7 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
           src={lesson.videoSignedUrl}
           initialPosition={lesson.videoPosition}
           completed={lesson.completed}
+          requiresNote={lesson.requiresNote}
           files={lesson.files}
           materialsUrl={lesson.materialsUrl}
           filesUnlocked={lesson.filesUnlocked}

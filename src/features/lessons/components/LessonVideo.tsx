@@ -1,14 +1,13 @@
 'use client';
 
 import { useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { celebrate } from '@/features/gamification/components/Celebration';
 import { LessonPlayer } from './LessonPlayer';
 import { saveProgressAction, markWatchedAction } from '../actions';
 
 /**
- * Связывает «глупый» LessonPlayer с server actions: сохранение позиции и отметку
- * просмотра. После зачёта обновляет страницу (откроется следующий урок).
+ * Связывает «глупый» LessonPlayer с server actions: сохранение позиции и отметку просмотра.
+ * При достижении 80% фиксируем просмотр (открывает следующий урок/материалы) БЕЗ зачёта —
+ * сам зачёт делает кнопка «Завершить урок» в LessonStage.
  */
 export function LessonVideo({
   lessonId,
@@ -25,8 +24,6 @@ export function LessonVideo({
   /** Доля просмотра 0..100 — для плашки «просмотрено видео». */
   onProgress?: (pct: number) => void;
 }) {
-  const router = useRouter();
-
   // Свежая подписанная ссылка по запросу плеера (истёк токен/сбой сегмента) — продолжаем без перезагрузки.
   const refreshSrc = useCallback(async (): Promise<string | null> => {
     try {
@@ -50,12 +47,8 @@ export function LessonVideo({
         void saveProgressAction(lessonId, seconds);
       }}
       onWatched={() => {
-        void markWatchedAction(lessonId).then((res) => {
-          if (res.ok && res.data.completed) {
-            if (res.data.reward) celebrate(res.data.reward);
-            router.refresh();
-          }
-        });
+        // Авто-фиксация просмотра (без зачёта): открывает следующий урок/материалы.
+        void markWatchedAction(lessonId, false);
       }}
     />
   );

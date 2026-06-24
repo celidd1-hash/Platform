@@ -26,9 +26,12 @@ export async function saveProgressAction(
   return saveVideoPosition(session.user.id, parsed.data.lessonId, parsed.data.seconds);
 }
 
-export async function markWatchedAction(lessonId: string): Promise<ActionResult<WatchResult>> {
+export async function markWatchedAction(
+  lessonId: string,
+  complete = false,
+): Promise<ActionResult<WatchResult>> {
   const session = await auth();
   if (!session?.user?.id) return fail('Не авторизован');
   if (typeof lessonId !== 'string' || !lessonId) return fail('Некорректный урок');
-  return markVideoWatched(session.user.id, lessonId);
+  return markVideoWatched(session.user.id, lessonId, complete === true);
 }

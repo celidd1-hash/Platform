@@ -240,6 +240,7 @@ export interface WatchResult {
 export async function markVideoWatched(
   userId: string,
   lessonId: string,
+  complete = false,
 ): Promise<ActionResult<WatchResult>> {
   const lesson = await q.getLessonWithContext(lessonId);
   if (!lesson) return fail('Урок не найден');
@@ -247,22 +248,32 @@ export async function markVideoWatched(
   if (!hasAccess) return fail('Нет доступа к уроку');
 
   const now = new Date();
-  if (!lesson.requiresNote) {
-    await q.upsertProgress(userId, lessonId, {
-      status: LESSON_STATUS.COMPLETED,
-      videoWatchedAt: now,
-      completedAt: now,
-    });
-    // Начисление XP/стрик/достижения после зачёта (ТЗ §3.5).
-    const reward = await onLessonCompleted(userId, lessonId);
-    return ok({ completed: true, needsHomework: false, reward });
-  }
-
-  // Урок с ДЗ: фиксируем просмотр видео. НЕ понижаем статус, если урок уже зачтён —
-  // повторный просмотр завершённого урока не должен сбрасывать его в in_progress
-  // (иначе теряется зачёт/XP, как было у Виктора).
   const existing = await q.getProgress(userId, lessonId);
   const alreadyCompleted = existing?.status === LESSON_STATUS.COMPLETED;
+
+  // Урок без ДЗ: зачёт происходит по явной кнопке «Завершить урок» (complete=true) при
+  // просмотре ≥80%. Авто-отметка на 80% (complete=false) только фиксирует просмотр —
+  // открывает следующий урок/материалы, но НЕ начисляет XP (плашка не всплывает).
+  if (!lesson.requiresNote) {
+    if (complete || alreadyCompleted) {
+      await q.upsertProgress(userId, lessonId, {
+        status: LESSON_STATUS.COMPLETED,
+        videoWatchedAt: now,
+        ...(alreadyCompleted ? {} : { completedAt: now }),
+      });
+      const reward = await onLessonCompleted(userId, lessonId);
+      return ok({ completed: true, needsHomework: false, reward });
+    }
+    await q.upsertProgress(userId, lessonId, {
+      status: LESSON_STATUS.IN_PROGRESS,
+      videoWatchedAt: now,
+    });
+    return ok({ completed: false, needsHomework: false });
+  }
+
+  // Урок с ДЗ: фиксируем просмотр (откроет ДЗ/материалы и следующий урок). Зачёт — после
+  // проверки ДЗ. НЕ понижаем статус уже зачтённого урока при повторном просмотре
+  // (иначе теряется зачёт/XP, как было у Виктора).
   await q.upsertProgress(userId, lessonId, {
     status: alreadyCompleted ? LESSON_STATUS.COMPLETED : LESSON_STATUS.IN_PROGRESS,
     videoWatchedAt: now,
