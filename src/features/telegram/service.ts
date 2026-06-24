@@ -2,7 +2,7 @@ import { randomBytes, createHash } from 'node:crypto';
 import { getNotifier } from '@/lib/providers/notify';
 import { parseNotifyPrefs, isNotifyAllowed, type NotifyPrefs } from '@/lib/notify-prefs';
 import { ok, fail, type ActionResult } from '@/lib/utils';
-import { env } from '@/config/env';
+import { getSecret } from '@/lib/secrets';
 import { TOKEN_TTL, NOTIFY_TYPES, type NotifyType } from '@/config/constants';
 import * as q from './queries';
 
@@ -27,9 +27,10 @@ export async function generateLinkCode(userId: string): Promise<ConnectInfo> {
   await q.deleteUserLinkTokens(userId);
   const code = randomBytes(6).toString('hex');
   await q.createLinkToken(userId, hashCode(code), new Date(Date.now() + TOKEN_TTL.TELEGRAM_LINK_MS));
-  const deeplink = env.TELEGRAM_BOT_USERNAME
-    ? `https://t.me/${env.TELEGRAM_BOT_USERNAME}?start=${code}`
-    : null;
+  // Username бота читаем из секретов (БД→env): он задаётся через админку «Интеграции»,
+  // а не как переменная Vercel — иначе диплинк не строился и показывался фолбэк с командой.
+  const botUsername = await getSecret('TELEGRAM_BOT_USERNAME');
+  const deeplink = botUsername ? `https://t.me/${botUsername}?start=${code}` : null;
   return { code, deeplink };
 }
 
@@ -159,6 +160,6 @@ export async function notifyStaffHomeworkNeedsWork(
   }
 }
 
-export function fallbackInfo(): ActionResult<null> {
-  return env.TELEGRAM_BOT_TOKEN ? ok(null) : fail('Бот не настроен');
+export async function fallbackInfo(): Promise<ActionResult<null>> {
+  return (await getSecret('TELEGRAM_BOT_TOKEN')) ? ok(null) : fail('Бот не настроен');
 }
