@@ -2,11 +2,10 @@ import { z } from 'zod';
 import {
   computeStreak,
   evaluateAchievement,
-  homeworkXpBonus,
   type AchievementCondition,
   type UserStats,
 } from '@/lib/gamification';
-import { XP, XP_EVENT_TYPES } from '@/config/constants';
+import { XP_EVENT_TYPES } from '@/config/constants';
 import * as q from './queries';
 
 /**
@@ -104,19 +103,24 @@ async function checkAchievements(userId: string) {
 }
 
 /**
- * Хук завершения урока: XP за урок + проверка завершения модуля/курса + стрик + достижения.
- * Вызывать ПОСЛЕ установки статуса урока completed (чтобы счётчики учли его).
+ * Хук завершения урока: XP за урок (значение задаёт админ в поле «XP за урок») + стрик +
+ * достижения. Вызывать ПОСЛЕ установки статуса урока completed (чтобы счётчики учли его).
+ *
+ * Решение (по требованию): XP начисляется ТОЛЬКО за уроки и достижения. Завершение
+ * модуля/курса фиксируем событием с нулевым XP — оно нужно для достижений за модуль/курс,
+ * но баллов само по себе не даёт.
  */
 export async function onLessonCompleted(userId: string, lessonId: string): Promise<void> {
-  await addXpOnce(userId, XP_EVENT_TYPES.LESSON_COMPLETED, XP.LESSON_COMPLETED, lessonId);
+  const reward = await q.getLessonReward(lessonId);
+  await addXpOnce(userId, XP_EVENT_TYPES.LESSON_COMPLETED, reward, lessonId);
 
   const ctx = await q.getLessonModuleCourse(lessonId);
   if (ctx) {
     if (await q.isModuleCompleted(userId, ctx.moduleId)) {
-      await addXpOnce(userId, XP_EVENT_TYPES.MODULE_COMPLETED, XP.MODULE_COMPLETED, ctx.moduleId);
+      await addXpOnce(userId, XP_EVENT_TYPES.MODULE_COMPLETED, 0, ctx.moduleId);
     }
     if (await q.isCourseCompleted(userId, ctx.module.courseId)) {
-      await addXpOnce(userId, XP_EVENT_TYPES.COURSE_COMPLETED, XP.COURSE_COMPLETED, ctx.module.courseId);
+      await addXpOnce(userId, XP_EVENT_TYPES.COURSE_COMPLETED, 0, ctx.module.courseId);
     }
   }
 
@@ -124,14 +128,12 @@ export async function onLessonCompleted(userId: string, lessonId: string): Promi
   await checkAchievements(userId);
 }
 
-/** Хук зачтённого ДЗ: XP за ДЗ + бонус по баллу + стрик + достижения (ТЗ §3.5). */
-export async function onHomeworkPassed(
-  userId: string,
-  lessonId: string,
-  score: number,
-): Promise<void> {
-  const amount = XP.HOMEWORK_PASSED + homeworkXpBonus(score, XP.HOMEWORK_SCORE_FACTOR);
-  await addXpOnce(userId, XP_EVENT_TYPES.HOMEWORK_PASSED, amount, lessonId);
+/**
+ * Хук зачтённого ДЗ: стрик + проверка достижений. XP за ДЗ НЕ начисляется (по требованию —
+ * баллы идут только за уроки и достижения). Вызывается после сохранения вердикта ДЗ, поэтому
+ * здесь повторно проверяем достижения (напр. «зачтено N ДЗ»).
+ */
+export async function onHomeworkPassed(userId: string): Promise<void> {
   await bumpStreak(userId);
   await checkAchievements(userId);
 }

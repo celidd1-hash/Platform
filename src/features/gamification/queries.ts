@@ -88,6 +88,15 @@ export function getLessonModuleCourse(lessonId: string) {
   });
 }
 
+/** XP за урок, заданный админом в редакторе урока (поле «XP за урок»). */
+export async function getLessonReward(lessonId: string): Promise<number> {
+  const lesson = await db.lesson.findUnique({
+    where: { id: lessonId },
+    select: { xpReward: true },
+  });
+  return lesson?.xpReward ?? 0;
+}
+
 // ── Достижения ──
 
 export function listAchievements() {

@@ -126,7 +126,7 @@ export async function submitHomework(
   if (passed) {
     await q.completeLesson(userId, lessonId);
     await onLessonCompleted(userId, lessonId);
-    await onHomeworkPassed(userId, lessonId, checkResult.score);
+    await onHomeworkPassed(userId);
   }
 
   // Оповещение ученику в Telegram (best-effort, ТЗ §3.9) — не ломает основной поток.
@@ -191,7 +191,7 @@ export async function gradeHomeworkManually(
   if (verdict === HOMEWORK_VERDICT.PASSED) {
     await q.completeLesson(hw.userId, hw.lessonId);
     await onLessonCompleted(hw.userId, hw.lessonId);
-    await onHomeworkPassed(hw.userId, hw.lessonId, 0);
+    await onHomeworkPassed(hw.userId);
   }
 
   await notifyHomeworkResult(hw.userId, {
