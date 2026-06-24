@@ -133,6 +133,11 @@ export const PASSWORD = {
   MIN_LENGTH: 10,
 } as const;
 
+/** ИИ-наставник (чат): лимит контекста базы знаний, чтобы держать токены под контролем. */
+export const MENTOR = {
+  MAX_CONTEXT_CHARS: 14_000,
+} as const;
+
 /** Загрузка файлов — белый список типов вложений уроков (ТЗ §6А.6). */
 export const UPLOAD = {
   ALLOWED_DOC_MIME: [

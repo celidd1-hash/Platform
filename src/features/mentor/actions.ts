@@ -6,6 +6,7 @@ import { getAiProvider, type ChatMessage } from '@/lib/providers/ai';
 import { rateLimit } from '@/lib/rate-limit';
 import { ok, fail, type ActionResult } from '@/lib/utils';
 import { RATE_LIMITS } from '@/config/constants';
+import { buildMentorContext } from './service';
 
 /**
  * Server action чата с ИИ-наставником (ТЗ §3). Auth + rate-limit + fallback.
@@ -33,7 +34,9 @@ export async function sendMentorMessageAction(
   }
 
   try {
-    const reply = await provider.chat(parsed.data);
+    // Контекст из курсов ученика: база знаний + промт куратора (ТЗ §3, §6А.3).
+    const context = await buildMentorContext(session.user.id);
+    const reply = await provider.chat(parsed.data, context);
     return ok(reply || 'Не удалось сформировать ответ. Попробуйте переформулировать вопрос.');
   } catch {
     return fail('Наставник сейчас недоступен. Попробуйте позже.');
