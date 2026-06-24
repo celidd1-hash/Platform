@@ -13,10 +13,16 @@ export function LessonVideo({
   lessonId,
   src,
   initialPosition,
+  onMeta,
+  onProgress,
 }: {
   lessonId: string;
   src: string | null;
   initialPosition: number;
+  /** Длительность видео (сек) известна — для плашки длительности. */
+  onMeta?: (durationSec: number) => void;
+  /** Доля просмотра 0..100 — для плашки «просмотрено видео». */
+  onProgress?: (pct: number) => void;
 }) {
   const router = useRouter();
 
@@ -37,6 +43,8 @@ export function LessonVideo({
       src={src}
       initialPosition={initialPosition}
       refreshSrc={refreshSrc}
+      onMeta={onMeta}
+      onProgress={onProgress}
       onSavePosition={(seconds) => {
         void saveProgressAction(lessonId, seconds);
       }}

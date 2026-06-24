@@ -3,7 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { AppShell } from '@/components/AppShell';
 import { Markdown } from '@/components/ui/Markdown';
 import { auth } from '@/features/auth';
-import { getLessonForUser, LessonVideo, LessonFiles, LessonNav } from '@/features/lessons';
+import { getLessonForUser, LessonStage, LessonNav } from '@/features/lessons';
 import { HomeworkBlock } from '@/features/homework';
 
 export default async function LessonPage({ params }: { params: Promise<{ id: string }> }) {
@@ -20,10 +20,14 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
 
   const lesson = result.lesson;
 
+  const lockHint = lesson.requiresNote
+    ? 'Откроется после просмотра видео и отправки домашнего задания.'
+    : 'Откроется после просмотра видео урока.';
+
   return (
     <AppShell>
-      <div className="mx-auto max-w-3xl">
-        <header className="mb-5">
+      <div className="mx-auto max-w-5xl">
+        <header className="mb-4">
           <Link href={`/course/${lesson.course.slug}`} className="text-xs text-muted-2 hover:text-gold">
             ← {lesson.course.title}
           </Link>
@@ -34,51 +38,36 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
             {lesson.title}
             {lesson.completed && <span className="ml-3 align-middle text-base text-ok">✓ пройдено</span>}
           </h1>
+
+          {/* «Введение» — текст под названием урока, без подписи (подпись только в админке). */}
+          {lesson.contentMd && (
+            <div className="mt-3 text-[15px] leading-relaxed text-muted">
+              <Markdown>{lesson.contentMd}</Markdown>
+            </div>
+          )}
         </header>
 
-        <LessonVideo lessonId={lesson.id} src={lesson.videoSignedUrl} initialPosition={lesson.videoPosition} />
-
-        {lesson.summaryMd && (
-          <div className="mt-6 rounded-token border border-line bg-panel p-5">
-            <div className="sectlabel mb-3">Кратко об уроке</div>
-            <Markdown>{lesson.summaryMd}</Markdown>
-          </div>
-        )}
-
-        {lesson.contentMd && (
-          <div className="mt-6">
-            <Markdown>{lesson.contentMd}</Markdown>
-          </div>
-        )}
-
-        <div className="mt-6">
-          <LessonFiles
-            lessonId={lesson.id}
-            files={lesson.files}
-            materialsUrl={lesson.materialsUrl}
-            unlocked={lesson.filesUnlocked}
-            lockHint={
-              lesson.requiresNote
-                ? 'Откроется после просмотра видео и отправки домашнего задания.'
-                : 'Откроется после просмотра видео урока.'
-            }
-          />
-        </div>
-
-        {/* Блок ДЗ с проверкой ИИ-наставником (ТЗ §3.4). */}
-        {lesson.requiresNote && (
-          <div className="mt-6">
+        <LessonStage
+          lessonId={lesson.id}
+          src={lesson.videoSignedUrl}
+          initialPosition={lesson.videoPosition}
+          completed={lesson.completed}
+          files={lesson.files}
+          materialsUrl={lesson.materialsUrl}
+          filesUnlocked={lesson.filesUnlocked}
+          lockHint={lockHint}
+        >
+          {/* Блок ДЗ с проверкой ИИ-наставником (ТЗ §3.4) — под плеером. */}
+          {lesson.requiresNote && (
             <HomeworkBlock
               lessonId={lesson.id}
               minLength={lesson.minNoteLength}
               alreadyPassed={lesson.completed}
             />
-          </div>
-        )}
+          )}
 
-        <div className="mt-8">
           <LessonNav prev={lesson.prev} next={lesson.next} courseSlug={lesson.course.slug} />
-        </div>
+        </LessonStage>
       </div>
     </AppShell>
   );

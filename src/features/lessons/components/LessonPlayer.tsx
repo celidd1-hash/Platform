@@ -16,6 +16,8 @@ export function LessonPlayer({
   initialPosition = 0,
   onSavePosition,
   onWatched,
+  onMeta,
+  onProgress,
   refreshSrc,
 }: {
   src: string | null;
@@ -24,6 +26,10 @@ export function LessonPlayer({
   onSavePosition?: (seconds: number) => void;
   /** Видео просмотрено (≥80%, LESSON.WATCHED_THRESHOLD). */
   onWatched?: () => void;
+  /** Длительность видео (сек) известна — для плашки длительности. */
+  onMeta?: (durationSec: number) => void;
+  /** Доля просмотра 0..100 (по текущей позиции) — для плашки «просмотрено видео». */
+  onProgress?: (pct: number) => void;
   /** Получить свежую подписанную ссылку (истёк токен/сбой сегмента) — для продолжения без перезагрузки. */
   refreshSrc?: () => Promise<string | null>;
 }) {
@@ -32,6 +38,9 @@ export function LessonPlayer({
   const watchedSentRef = useRef(false);
   const refreshSrcRef = useRef(refreshSrc);
   refreshSrcRef.current = refreshSrc;
+  const onMetaRef = useRef(onMeta);
+  onMetaRef.current = onMeta;
+  const lastPctRef = useRef(-1);
   const lastRefreshRef = useRef(0);
   const [speed, setSpeed] = useState(1);
 
@@ -76,6 +85,7 @@ export function LessonPlayer({
     }
 
     const onLoaded = () => {
+      if (video.duration > 0) onMetaRef.current?.(video.duration);
       if (initialPosition > 0 && initialPosition < video.duration) {
         video.currentTime = initialPosition;
       }
@@ -96,6 +106,14 @@ export function LessonPlayer({
     if (onSavePosition && now - lastSavedRef.current >= 10) {
       lastSavedRef.current = now;
       onSavePosition(now);
+    }
+
+    if (onProgress && video.duration > 0) {
+      const pct = Math.min(100, Math.round((video.currentTime / video.duration) * 100));
+      if (pct !== lastPctRef.current) {
+        lastPctRef.current = pct;
+        onProgress(pct);
+      }
     }
 
     if (

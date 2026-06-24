@@ -67,12 +67,12 @@ export function LessonForm({ lesson }: { lesson: LessonFormValues }) {
       </label>
 
       <label className="block">
-        <span className={labelCls}>Кратко об уроке (markdown)</span>
+        <span className={labelCls}>Кратко об уроке (только для админки, ученику не показывается)</span>
         <textarea name="lessonSummaryMd" rows={3} defaultValue={lesson.lessonSummaryMd ?? ''} className={inputCls} />
       </label>
 
       <label className="block">
-        <span className={labelCls}>Описание урока (markdown)</span>
+        <span className={labelCls}>Введение (показывается ученику под названием урока, markdown)</span>
         <textarea name="contentMd" rows={8} defaultValue={lesson.contentMd ?? ''} className={inputCls} />
       </label>
 
