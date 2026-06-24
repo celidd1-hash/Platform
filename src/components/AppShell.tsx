@@ -1,4 +1,5 @@
 import { auth, SignOutButton } from '@/features/auth';
+import { Celebration } from '@/features/gamification';
 import { Sidebar } from './ui/Sidebar';
 
 /**
@@ -22,6 +23,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
       <div className="glow glow-b" aria-hidden />
       <Sidebar user={user} signOutSlot={<SignOutButton />} />
       <main className="relative z-10 flex-1 overflow-y-auto p-8">{children}</main>
+      <Celebration />
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { celebrate } from '@/features/gamification/components/Celebration';
 import { LessonPlayer } from './LessonPlayer';
 import { saveProgressAction, markWatchedAction } from '../actions';
 
@@ -50,7 +51,10 @@ export function LessonVideo({
       }}
       onWatched={() => {
         void markWatchedAction(lessonId).then((res) => {
-          if (res.ok && res.data.completed) router.refresh();
+          if (res.ok && res.data.completed) {
+            if (res.data.reward) celebrate(res.data.reward);
+            router.refresh();
+          }
         });
       }}
     />

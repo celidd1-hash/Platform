@@ -2,7 +2,7 @@ import { getAiProvider } from '@/lib/providers/ai';
 import { rateLimit } from '@/lib/rate-limit';
 import { ok, fail, type ActionResult } from '@/lib/utils';
 import { HOMEWORK, HOMEWORK_VERDICT, RATE_LIMITS } from '@/config/constants';
-import { onLessonCompleted, onHomeworkPassed } from '@/features/gamification';
+import { onLessonCompleted, onHomeworkPassed, type LessonCompletionReward } from '@/features/gamification';
 import { notifyHomeworkResult, notifyStaffHomeworkNeedsWork } from '@/features/telegram';
 import * as q from './queries';
 
@@ -18,6 +18,8 @@ export interface SubmitResult {
   feedback: string | null;
   attemptNo: number;
   lessonCompleted: boolean;
+  /** Награда для плашки-поздравления (есть, если урок засчитан этим действием). */
+  reward?: LessonCompletionReward;
 }
 
 export async function submitHomework(
@@ -67,13 +69,14 @@ export async function submitHomework(
       attemptNo,
     });
     await q.completeLesson(userId, lessonId);
-    await onLessonCompleted(userId, lessonId); // урок временно засчитан → XP за урок
+    const reward = await onLessonCompleted(userId, lessonId); // урок временно засчитан → XP за урок
     return ok({
       verdict: 'pending',
       score: null,
       feedback: null,
       attemptNo,
       lessonCompleted: true,
+      reward,
     });
   }
 
@@ -101,13 +104,14 @@ export async function submitHomework(
       attemptNo,
     });
     await q.completeLesson(userId, lessonId);
-    await onLessonCompleted(userId, lessonId); // урок временно засчитан → XP за урок
+    const reward = await onLessonCompleted(userId, lessonId); // урок временно засчитан → XP за урок
     return ok({
       verdict: 'pending',
       score: null,
       feedback: null,
       attemptNo,
       lessonCompleted: true,
+      reward,
     });
   }
 
@@ -123,9 +127,10 @@ export async function submitHomework(
   });
 
   // При зачёте урок засчитывается + начисление XP/стрик/достижения (ТЗ §3.4-3.5).
+  let reward: LessonCompletionReward | undefined;
   if (passed) {
     await q.completeLesson(userId, lessonId);
-    await onLessonCompleted(userId, lessonId);
+    reward = await onLessonCompleted(userId, lessonId);
     await onHomeworkPassed(userId);
   }
 
@@ -152,6 +157,7 @@ export async function submitHomework(
     feedback: checkResult.feedback,
     attemptNo,
     lessonCompleted: passed,
+    reward,
   });
 }
 

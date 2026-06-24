@@ -3,6 +3,7 @@
 import { useActionState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFormStatus } from 'react-dom';
+import { celebrate } from '@/features/gamification/components/Celebration';
 import { submitHomeworkAction, type HomeworkState } from '../actions';
 
 const initial: HomeworkState = { status: 'idle' };
@@ -61,6 +62,7 @@ export function HomeworkBlock({
 
   useEffect(() => {
     if (state.status === 'submitted' && state.result?.lessonCompleted) {
+      if (state.result.reward) celebrate(state.result.reward);
       router.refresh();
     }
   }, [state, router]);

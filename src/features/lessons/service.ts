@@ -3,7 +3,7 @@ import { getFileProvider } from '@/lib/providers/file';
 import { computeUnlocks } from '@/lib/progress';
 import { ok, fail, type ActionResult } from '@/lib/utils';
 import { LESSON_STATUS, HOMEWORK } from '@/config/constants';
-import { onLessonCompleted } from '@/features/gamification';
+import { onLessonCompleted, type LessonCompletionReward } from '@/features/gamification';
 import { hasSubmittedHomework } from '@/features/homework';
 import * as q from './queries';
 
@@ -226,6 +226,8 @@ export interface WatchResult {
   completed: boolean;
   /** Требуется выполнить ДЗ для зачёта (ТЗ §3.4, Этап 3). */
   needsHomework: boolean;
+  /** Награда для плашки-поздравления (есть только при полном зачёте). */
+  reward?: LessonCompletionReward;
 }
 
 /**
@@ -252,8 +254,8 @@ export async function markVideoWatched(
       completedAt: now,
     });
     // Начисление XP/стрик/достижения после зачёта (ТЗ §3.5).
-    await onLessonCompleted(userId, lessonId);
-    return ok({ completed: true, needsHomework: false });
+    const reward = await onLessonCompleted(userId, lessonId);
+    return ok({ completed: true, needsHomework: false, reward });
   }
 
   await q.upsertProgress(userId, lessonId, {

@@ -19,10 +19,31 @@ const conditionSchema = z.object({
   threshold: z.number().int().positive(),
 });
 
-/** Начислить XP однократно (идемпотентно по type+refId). */
-async function addXpOnce(userId: string, type: string, amount: number, refId: string | null) {
-  if (refId && (await q.xpEventExists(userId, type, refId))) return;
+/** Начислить XP однократно (идемпотентно по type+refId). Возвращает true, если начислено впервые. */
+async function addXpOnce(
+  userId: string,
+  type: string,
+  amount: number,
+  refId: string | null,
+): Promise<boolean> {
+  if (refId && (await q.xpEventExists(userId, type, refId))) return false;
   await q.addXp(userId, type, amount, refId);
+  return true;
+}
+
+/** Новое достижение, выданное в этот момент (для плашки-поздравления). */
+export interface EarnedAchievement {
+  title: string;
+  icon: string | null;
+  xp: number;
+}
+
+/** Награда за завершение урока — для плашки-поздравления на клиенте. */
+export interface LessonCompletionReward {
+  /** XP за сам урок (0, если уже было начислено ранее). */
+  xpAwarded: number;
+  /** Достижения, открытые этим действием (пусто, если новых нет). */
+  achievements: EarnedAchievement[];
 }
 
 /** Обновить стрик по активности (ТЗ §3.5). */
@@ -78,14 +99,18 @@ function statsFor(
   );
 }
 
-/** Проверить и выдать достижения по текущей статистике (ТЗ §3.5). */
-async function checkAchievements(userId: string) {
+/**
+ * Проверить и выдать достижения по текущей статистике (ТЗ §3.5).
+ * Возвращает список достижений, открытых именно сейчас (для плашки-поздравления).
+ */
+async function checkAchievements(userId: string): Promise<EarnedAchievement[]> {
   const [{ global, byCourse }, achievements, earnedIds] = await Promise.all([
     buildStats(userId),
     q.listAchievements(),
     q.getEarnedAchievementIds(userId),
   ]);
   const earned = new Set(earnedIds);
+  const newlyEarned: EarnedAchievement[] = [];
 
   for (const a of achievements) {
     if (earned.has(a.id)) continue;
@@ -95,11 +120,13 @@ async function checkAchievements(userId: string) {
     const progress = evaluateAchievement(parsed.data as AchievementCondition, stats);
     if (progress.earned) {
       const granted = await q.grantAchievement(userId, a.id);
-      if (granted && a.xpReward > 0) {
-        await addXpOnce(userId, 'achievement', a.xpReward, a.id);
+      if (granted) {
+        if (a.xpReward > 0) await addXpOnce(userId, 'achievement', a.xpReward, a.id);
+        newlyEarned.push({ title: a.title, icon: a.icon, xp: a.xpReward });
       }
     }
   }
+  return newlyEarned;
 }
 
 /**
@@ -110,9 +137,12 @@ async function checkAchievements(userId: string) {
  * модуля/курса фиксируем событием с нулевым XP — оно нужно для достижений за модуль/курс,
  * но баллов само по себе не даёт.
  */
-export async function onLessonCompleted(userId: string, lessonId: string): Promise<void> {
+export async function onLessonCompleted(
+  userId: string,
+  lessonId: string,
+): Promise<LessonCompletionReward> {
   const reward = await q.getLessonReward(lessonId);
-  await addXpOnce(userId, XP_EVENT_TYPES.LESSON_COMPLETED, reward, lessonId);
+  const awarded = await addXpOnce(userId, XP_EVENT_TYPES.LESSON_COMPLETED, reward, lessonId);
 
   const ctx = await q.getLessonModuleCourse(lessonId);
   if (ctx) {
@@ -125,7 +155,8 @@ export async function onLessonCompleted(userId: string, lessonId: string): Promi
   }
 
   await bumpStreak(userId);
-  await checkAchievements(userId);
+  const achievements = await checkAchievements(userId);
+  return { xpAwarded: awarded ? reward : 0, achievements };
 }
 
 /**
