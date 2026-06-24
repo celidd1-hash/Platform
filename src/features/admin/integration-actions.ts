@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { ok, fail, type ActionResult } from '@/lib/utils';
 import { testAiConnection } from '@/lib/providers/ai';
+import { testNotifier } from '@/lib/providers/notify';
 import { requireAdmin } from './guard';
 import { saveIntegration, removeIntegration } from './integrations';
 
@@ -29,5 +30,13 @@ export async function testAnthropicAction(): Promise<ActionResult<string>> {
   const admin = await requireAdmin();
   if (!admin) return fail('Доступ только для администратора');
   const res = await testAiConnection();
+  return res.ok ? ok(res.detail) : fail(res.detail);
+}
+
+/** Тест Telegram-бота (валидность токена + статус webhook). */
+export async function testTelegramAction(): Promise<ActionResult<string>> {
+  const admin = await requireAdmin();
+  if (!admin) return fail('Доступ только для администратора');
+  const res = await testNotifier();
   return res.ok ? ok(res.detail) : fail(res.detail);
 }
