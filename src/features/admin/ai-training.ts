@@ -20,7 +20,8 @@ export const knowledgeSchema = z.object({
   courseId: z.string().min(1),
   moduleId: z.string().min(1).optional(), // не задан = общая база курса
   title: z.string().trim().min(2).max(200),
-  contentMd: z.string().trim().min(1).max(20_000),
+  // Лимит большой, чтобы влезал полный сценарий/транскрипт модуля (≈60k символов).
+  contentMd: z.string().trim().min(1).max(60_000),
 });
 
 export interface AiTrainingData {

@@ -185,13 +185,17 @@ export function AiTrainingPanel({ data }: { data: AiTrainingData }) {
                 При проверке ДЗ агент получит общую базу курса + базу модуля этого урока.
               </span>
             </label>
-            <input name="title" placeholder="Заголовок (напр. «Тезисы модуля 1»)" className={inputCls} />
+            <input name="title" placeholder="Заголовок (напр. «Сценарий модуля 1»)" className={inputCls} />
             <textarea
               name="contentMd"
               rows={6}
-              placeholder="Тезисы, эталонные ответы, критерии оценки…"
+              placeholder="Вставьте ТЕКСТ: сценарий/транскрипт урока, тезисы, эталонные ответы, критерии…"
               className={inputCls}
             />
+            <span className="block text-xs text-muted-2">
+              Только текст (вставкой), файлы сюда не загружаются. Можно вставить весь сценарий
+              модуля (до ~60 000 символов). По этому тексту агент проверяет ДЗ и отвечает в чате-наставнике.
+            </span>
             <Note state={kbState} />
             <button className="self-start rounded-xl border border-gold/40 px-5 py-2.5 font-label text-sm tracking-[1px] text-gold-bright hover:bg-[rgba(200,160,79,0.08)]">
               + Добавить в базу знаний
