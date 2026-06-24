@@ -83,6 +83,42 @@ export function listWatchedLessonIdsForCourse(userId: string, courseId: string) 
     .then((rows) => rows.map((r) => r.lessonId));
 }
 
+/**
+ * Уроки курса, ОТКРЫВАЮЩИЕ следующий (gate перехода):
+ * — урок с ДЗ открывает следующий, когда ДЗ зачтено (verdict=passed);
+ * — урок без ДЗ — когда завершён по кнопке «Завершить урок» (status=completed).
+ */
+export async function listAdvancedLessonIdsForCourse(
+  userId: string,
+  courseId: string,
+): Promise<string[]> {
+  const [passed, completedNoHw] = await Promise.all([
+    db.homework.findMany({
+      where: { userId, verdict: 'passed', lesson: { module: { courseId } } },
+      select: { lessonId: true },
+    }),
+    db.lessonProgress.findMany({
+      where: {
+        userId,
+        status: LessonStatus.completed,
+        lesson: { requiresNote: false, module: { courseId } },
+      },
+      select: { lessonId: true },
+    }),
+  ]);
+  const ids = new Set<string>();
+  for (const h of passed) ids.add(h.lessonId);
+  for (const p of completedNoHw) ids.add(p.lessonId);
+  return [...ids];
+}
+
+/** Зачтено ли ДЗ урока (verdict=passed) — для показа блока ДЗ и гейта перехода. */
+export function hasPassedHomework(userId: string, lessonId: string): Promise<boolean> {
+  return db.homework
+    .findFirst({ where: { userId, lessonId, verdict: 'passed' }, select: { id: true } })
+    .then(Boolean);
+}
+
 /** Файл-вложение с курсом его урока — для проверки доступа на скачивание. */
 export function getFileWithCourse(lessonId: string, fileId: string) {
   return db.lessonFile.findFirst({

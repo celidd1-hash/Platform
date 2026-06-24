@@ -53,6 +53,7 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
           initialPosition={lesson.videoPosition}
           completed={lesson.completed}
           requiresNote={lesson.requiresNote}
+          homeworkPassed={lesson.homeworkPassed}
           files={lesson.files}
           materialsUrl={lesson.materialsUrl}
           filesUnlocked={lesson.filesUnlocked}
@@ -63,7 +64,7 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
             <HomeworkBlock
               lessonId={lesson.id}
               minLength={lesson.minNoteLength}
-              alreadyPassed={lesson.completed}
+              alreadyPassed={lesson.homeworkPassed}
             />
           )}
 

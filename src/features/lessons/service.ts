@@ -27,6 +27,8 @@ export interface LessonView {
   videoSignedUrl: string | null;
   videoPosition: number;
   completed: boolean;
+  /** Зачтено ли ДЗ урока (verdict=passed). Управляет показом блока ДЗ и переходом дальше. */
+  homeworkPassed: boolean;
   course: { title: string; slug: string };
   moduleTitle: string;
   files: Array<{ id: string; title: string; fileType: string; sizeBytes: number }>;
@@ -65,19 +67,20 @@ export async function getLessonForUser(lessonId: string, userId: string): Promis
   if (!lesson) return { kind: 'not_found' };
 
   const course = lesson.module.course;
-  const [hasAccess, orderedLessons, watchedIds, progress] = await Promise.all([
+  const [hasAccess, orderedLessons, advancedIds, progress, homeworkPassed] = await Promise.all([
     q.hasActiveEnrollment(userId, course.id),
     q.listCourseLessonIds(course.id),
-    q.listWatchedLessonIdsForCourse(userId, course.id),
+    q.listAdvancedLessonIdsForCourse(userId, course.id),
     q.getProgress(userId, lessonId),
+    q.hasPassedHomework(userId, lessonId),
   ]);
 
   if (!hasAccess) return { kind: 'access_denied', courseSlug: course.slug };
 
-  // Следующий урок открывается по просмотру предыдущего на ≥80% (без ожидания ДЗ).
+  // Следующий урок открывает зачтённое ДЗ предыдущего (урок без ДЗ — завершение по кнопке).
   const orderedIds = orderedLessons.map((l) => l.id);
-  const watched = new Set(watchedIds);
-  const { lockedById } = computeUnlocks(orderedIds, watched, course.isStrictOrder);
+  const advanced = new Set(advancedIds);
+  const { lockedById } = computeUnlocks(orderedIds, advanced, course.isStrictOrder);
   if (lockedById[lessonId]) return { kind: 'locked', courseSlug: course.slug };
 
   // Материалы (конспекты и/или внешняя ссылка) открыты после просмотра видео (+ отправки ДЗ).
@@ -112,6 +115,7 @@ export async function getLessonForUser(lessonId: string, userId: string): Promis
       videoSignedUrl,
       videoPosition: progress?.videoPosition ?? 0,
       completed: progress?.status === LESSON_STATUS.COMPLETED,
+      homeworkPassed,
       course: { title: course.title, slug: course.slug },
       moduleTitle: lesson.module.title,
       files: lesson.files,
@@ -133,15 +137,15 @@ export async function getLessonStreamUrl(userId: string, lessonId: string): Prom
   if (!lesson || !lesson.videoUrl) return null;
 
   const course = lesson.module.course;
-  const [hasAccess, orderedLessons, watchedIds] = await Promise.all([
+  const [hasAccess, orderedLessons, advancedIds] = await Promise.all([
     q.hasActiveEnrollment(userId, course.id),
     q.listCourseLessonIds(course.id),
-    q.listWatchedLessonIdsForCourse(userId, course.id),
+    q.listAdvancedLessonIdsForCourse(userId, course.id),
   ]);
   if (!hasAccess) return null;
 
   const orderedIds = orderedLessons.map((l) => l.id);
-  const { lockedById } = computeUnlocks(orderedIds, new Set(watchedIds), course.isStrictOrder);
+  const { lockedById } = computeUnlocks(orderedIds, new Set(advancedIds), course.isStrictOrder);
   if (lockedById[lessonId]) return null;
 
   try {
@@ -251,32 +255,23 @@ export async function markVideoWatched(
   const existing = await q.getProgress(userId, lessonId);
   const alreadyCompleted = existing?.status === LESSON_STATUS.COMPLETED;
 
-  // Урок без ДЗ: зачёт происходит по явной кнопке «Завершить урок» (complete=true) при
-  // просмотре ≥80%. Авто-отметка на 80% (complete=false) только фиксирует просмотр —
-  // открывает следующий урок/материалы, но НЕ начисляет XP (плашка не всплывает).
-  if (!lesson.requiresNote) {
-    if (complete || alreadyCompleted) {
-      await q.upsertProgress(userId, lessonId, {
-        status: LESSON_STATUS.COMPLETED,
-        videoWatchedAt: now,
-        ...(alreadyCompleted ? {} : { completedAt: now }),
-      });
-      const reward = await onLessonCompleted(userId, lessonId);
-      return ok({ completed: true, needsHomework: false, reward });
-    }
+  // Кнопка «Завершить урок» (complete=true) при просмотре ≥80% засчитывает урок и начисляет
+  // XP — для ВСЕХ уроков, включая уроки с ДЗ. ДЗ остаётся отдельно: его проверка открывает
+  // следующий урок (gate перехода — listAdvancedLessonIdsForCourse). XP идемпотентны.
+  if (complete || alreadyCompleted) {
     await q.upsertProgress(userId, lessonId, {
-      status: LESSON_STATUS.IN_PROGRESS,
+      status: LESSON_STATUS.COMPLETED,
       videoWatchedAt: now,
+      ...(alreadyCompleted ? {} : { completedAt: now }),
     });
-    return ok({ completed: false, needsHomework: false });
+    const reward = await onLessonCompleted(userId, lessonId);
+    return ok({ completed: true, needsHomework: lesson.requiresNote, reward });
   }
 
-  // Урок с ДЗ: фиксируем просмотр (откроет ДЗ/материалы и следующий урок). Зачёт — после
-  // проверки ДЗ. НЕ понижаем статус уже зачтённого урока при повторном просмотре
-  // (иначе теряется зачёт/XP, как было у Виктора).
+  // Авто-фиксация просмотра (complete=false): открывает материалы/«просмотрено», без зачёта/XP.
   await q.upsertProgress(userId, lessonId, {
-    status: alreadyCompleted ? LESSON_STATUS.COMPLETED : LESSON_STATUS.IN_PROGRESS,
+    status: LESSON_STATUS.IN_PROGRESS,
     videoWatchedAt: now,
   });
-  return ok({ completed: alreadyCompleted, needsHomework: !alreadyCompleted });
+  return ok({ completed: false, needsHomework: lesson.requiresNote });
 }

@@ -94,20 +94,20 @@ export async function getCoursePage(slug: string, userId: string): Promise<Cours
   const course = await q.getCourseBySlug(slug);
   if (!course) return null;
 
-  const [hasAccess, completedIds, watchedIds] = await Promise.all([
+  const [hasAccess, completedIds, advancedIds] = await Promise.all([
     q.hasActiveEnrollment(userId, course.id),
     q.listCompletedLessonIdsForCourse(userId, course.id),
-    q.listWatchedLessonIdsForCourse(userId, course.id),
+    q.listAdvancedLessonIdsForCourse(userId, course.id),
   ]);
   const completed = new Set(completedIds);
-  const watched = new Set(watchedIds);
+  const advanced = new Set(advancedIds);
 
-  // Плоский порядок уроков курс→модуль→урок. Открытие — по просмотру (≥80%),
-  // «продолжить» — по завершению (видео + ДЗ).
+  // Плоский порядок уроков курс→модуль→урок. Следующий урок открывает зачтённое ДЗ
+  // (урок без ДЗ — завершение по кнопке); «продолжить» — по завершению урока.
   const orderedLessonIds = course.modules.flatMap((m) => m.lessons.map((l) => l.id));
   const { lockedById, continueLessonId } = computeUnlocks(
     orderedLessonIds,
-    watched,
+    advanced,
     course.isStrictOrder,
     completed,
   );

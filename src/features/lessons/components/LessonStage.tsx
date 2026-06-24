@@ -23,6 +23,7 @@ export function LessonStage({
   initialPosition,
   completed,
   requiresNote,
+  homeworkPassed,
   files,
   materialsUrl,
   filesUnlocked,
@@ -34,6 +35,7 @@ export function LessonStage({
   initialPosition: number;
   completed: boolean;
   requiresNote: boolean;
+  homeworkPassed: boolean;
   files: LessonFile[];
   materialsUrl: string | null;
   filesUnlocked: boolean;
@@ -62,12 +64,8 @@ export function LessonStage({
         setHint(res.error);
         return;
       }
-      if (res.data.completed) {
-        if (res.data.reward) celebrate(res.data.reward);
-        setDone(true);
-      } else if (res.data.needsHomework) {
-        setHint('Просмотр подтверждён — выполните домашнее задание ниже для зачёта урока.');
-      }
+      if (res.data.reward) celebrate(res.data.reward);
+      setDone(true);
       router.refresh();
     });
   }
@@ -83,13 +81,18 @@ export function LessonStage({
           onProgress={(p) => setWatchedPct((prev) => Math.max(prev, p))}
         />
 
-        {/* Кнопка завершения урока под плеером. Для урока с ДЗ зачёт даёт проверка задания —
-            там кнопка не нужна (показываем только статус «завершён», когда ДЗ зачтено). */}
+        {/* Кнопка завершения урока под плеером — на всех уроках. Активна при просмотре ≥80%:
+            засчитывает урок и начисляет XP. Для урока с ДЗ переход дальше открывает зачтённое ДЗ. */}
         {done ? (
-          <div className="rounded-xl border border-ok/40 bg-[rgba(123,191,143,0.08)] px-5 py-3 text-center font-label text-sm tracking-[1px] text-ok">
-            ✓ Урок завершён
+          <div className="rounded-xl border border-ok/40 bg-[rgba(123,191,143,0.08)] px-5 py-3 text-center text-sm text-ok">
+            <span className="font-label tracking-[1px]">✓ Урок завершён</span>
+            {requiresNote && !homeworkPassed && (
+              <div className="mt-1 text-xs text-muted-2">
+                Сдайте домашнее задание ниже, чтобы открыть следующий урок.
+              </div>
+            )}
           </div>
-        ) : !requiresNote ? (
+        ) : (
           <div>
             <button
               onClick={finish}
@@ -104,7 +107,7 @@ export function LessonStage({
             </button>
             {hint && <div className="mt-2 text-center text-xs text-muted-2">{hint}</div>}
           </div>
-        ) : null}
+        )}
 
         {children}
       </div>
