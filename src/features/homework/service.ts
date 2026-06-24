@@ -88,6 +88,7 @@ export async function submitHomework(
       lessonTitle: lesson.title,
       passScore,
       strictness,
+      promptTemplate: settings?.promptTemplate,
     });
   } catch (e) {
     // Ошибка API → fallback (деградация вместо краха, ARCHITECTURE.md §6).
