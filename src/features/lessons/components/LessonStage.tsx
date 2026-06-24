@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import Link from 'next/link';
 import { LESSON } from '@/config/constants';
 import { LessonVideo } from './LessonVideo';
 import { LessonFiles } from './LessonFiles';
@@ -101,26 +100,6 @@ export function LessonStage({
             />
           </div>
         )}
-
-        {/* ИИ-наставник */}
-        <div className="rounded-token border border-gold/30 bg-panel p-4">
-          <div className="flex items-center gap-2">
-            <span className="text-gold-bright">🤝</span>
-            <span className="text-sm text-ink">AI-Наставник</span>
-            <span className="ml-auto font-label text-[10px] uppercase tracking-[1px] text-ok">
-              онлайн 24/7
-            </span>
-          </div>
-          <p className="mt-2 text-xs text-muted">
-            Спроси про этот урок — объясню простыми словами.
-          </p>
-          <Link
-            href="/mentor"
-            className="mt-3 block rounded-lg bg-gradient-to-r from-gold-deep to-gold px-4 py-2 text-center font-label text-xs tracking-[1px] text-[#1a1206] transition-colors hover:to-gold-bright"
-          >
-            Спросить AI
-          </Link>
-        </div>
       </aside>
     </div>
   );
