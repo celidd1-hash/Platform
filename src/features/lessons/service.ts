@@ -258,9 +258,14 @@ export async function markVideoWatched(
     return ok({ completed: true, needsHomework: false, reward });
   }
 
+  // Урок с ДЗ: фиксируем просмотр видео. НЕ понижаем статус, если урок уже зачтён —
+  // повторный просмотр завершённого урока не должен сбрасывать его в in_progress
+  // (иначе теряется зачёт/XP, как было у Виктора).
+  const existing = await q.getProgress(userId, lessonId);
+  const alreadyCompleted = existing?.status === LESSON_STATUS.COMPLETED;
   await q.upsertProgress(userId, lessonId, {
-    status: LESSON_STATUS.IN_PROGRESS,
+    status: alreadyCompleted ? LESSON_STATUS.COMPLETED : LESSON_STATUS.IN_PROGRESS,
     videoWatchedAt: now,
   });
-  return ok({ completed: false, needsHomework: true });
+  return ok({ completed: alreadyCompleted, needsHomework: !alreadyCompleted });
 }
