@@ -17,6 +17,14 @@ function hashCode(raw: string): string {
   return createHash('sha256').update(raw).digest('hex');
 }
 
+/**
+ * Экранирование для parse_mode=HTML: динамический текст (название урока, имя, фидбэк ИИ)
+ * может содержать <, >, & и ломать разбор HTML в Telegram (ошибка 400 → оповещение не уходит).
+ */
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 export interface ConnectInfo {
   code: string;
   deeplink: string | null;
@@ -125,10 +133,10 @@ export async function notifyHomeworkResult(
     data.verdict === 'passed' ? '✅ Зачтено' : data.verdict === 'needs_work' ? '↻ На доработку' : '⏳ На проверке';
   const lines = [
     `<b>Результат проверки ДЗ</b>`,
-    `Урок: ${data.lessonTitle}`,
+    `Урок: ${escapeHtml(data.lessonTitle)}`,
     `${verdictText}${data.score != null ? ` · ${data.score}/100` : ''}`,
   ];
-  if (data.feedback) lines.push(`\n${data.feedback}`);
+  if (data.feedback) lines.push(`\n${escapeHtml(data.feedback)}`);
   await notify(userId, NOTIFY_TYPES.HOMEWORK_RESULT, lines.join('\n'));
 }
 
@@ -148,11 +156,11 @@ export async function notifyStaffHomeworkNeedsWork(
 
   const lines = [
     `<b>ДЗ на доработку</b>`,
-    `Ученик: ${student?.name ?? '—'}`,
-    `Урок: ${data.lessonTitle}`,
+    `Ученик: ${escapeHtml(student?.name ?? '—')}`,
+    `Урок: ${escapeHtml(data.lessonTitle)}`,
     `↻ Требует доработки${data.score != null ? ` · ${data.score}/100` : ''}`,
   ];
-  if (data.feedback) lines.push(`\n${data.feedback}`);
+  if (data.feedback) lines.push(`\n${escapeHtml(data.feedback)}`);
   const text = lines.join('\n');
 
   for (const staffId of staffIds) {
