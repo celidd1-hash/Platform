@@ -4,18 +4,30 @@ import type { CoursePageModule } from '../service';
 const badgeBase =
   'flex h-9 w-9 flex-none items-center justify-center rounded-full font-display text-sm';
 
-/** Программа курса: модули с карточками уроков — номер, статус, кнопка «Открыть» (ТЗ §3.3). */
+/** Программа курса: модули свёрнуты — ученик раскрывает модуль и видит его уроки (ТЗ §3.3). */
 export function CourseProgram({ modules }: { modules: CoursePageModule[] }) {
   return (
     <div className="flex flex-col gap-4">
-      {modules.map((module) => (
+      {modules.map((module) => {
+        const total = module.lessons.length;
+        const done = module.lessons.filter((l) => l.completed).length;
+
+        return (
         <details
           key={module.id}
-          open
-          className="overflow-hidden rounded-token border border-line bg-panel"
+          className="group overflow-hidden rounded-token border border-line bg-panel"
         >
-          <summary className="cursor-pointer select-none px-5 py-4 font-label text-sm tracking-[1px] text-gold">
-            {module.title}
+          <summary className="flex cursor-pointer select-none items-center gap-3 px-5 py-4">
+            <span
+              className="flex-none text-gold transition-transform duration-200 group-open:rotate-90"
+              aria-hidden
+            >
+              ▶
+            </span>
+            <span className="flex-1 font-label text-sm tracking-[1px] text-gold">{module.title}</span>
+            <span className="flex-none font-label text-[11px] uppercase tracking-[1px] text-muted-2">
+              {done} / {total}
+            </span>
           </summary>
 
           <div className="flex flex-col gap-2 border-t border-line p-3">
@@ -75,7 +87,8 @@ export function CourseProgram({ modules }: { modules: CoursePageModule[] }) {
             )}
           </div>
         </details>
-      ))}
+        );
+      })}
     </div>
   );
 }
