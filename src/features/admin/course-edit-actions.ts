@@ -50,6 +50,8 @@ export async function saveModuleAction(_prev: EditState, formData: FormData): Pr
     courseId: formData.get('courseId'),
     title: formData.get('title'),
     position: formData.get('position') || undefined,
+    resultText: formData.get('resultText') || undefined,
+    durationMinutes: formData.get('durationMinutes') || undefined,
   });
   if (!parsed.success) return { status: 'error', message: 'Проверьте название модуля' };
 

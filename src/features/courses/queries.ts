@@ -69,6 +69,8 @@ export function getCourseBySlug(slug: string) {
           id: true,
           title: true,
           position: true,
+          resultText: true,
+          durationMinutes: true,
           lessons: {
             where: liveLesson,
             orderBy: { position: 'asc' },

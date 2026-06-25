@@ -71,6 +71,8 @@ export interface CoursePageModule {
   id: string;
   title: string;
   position: number;
+  resultText: string | null;
+  durationMinutes: number | null;
   lessons: CoursePageLesson[];
 }
 
@@ -116,6 +118,8 @@ export async function getCoursePage(slug: string, userId: string): Promise<Cours
     id: m.id,
     title: m.title,
     position: m.position,
+    resultText: m.resultText,
+    durationMinutes: m.durationMinutes,
     lessons: m.lessons.map((l) => ({
       id: l.id,
       title: l.title,
@@ -145,6 +149,8 @@ export interface ModulePageData {
   moduleId: string;
   moduleTitle: string;
   modulePosition: number;
+  resultText: string | null;
+  durationMinutes: number | null;
   hasAccess: boolean;
   lessonsTotal: number;
   lessonsDone: number;
@@ -177,6 +183,8 @@ export async function getModulePage(
     moduleId: mod.id,
     moduleTitle: mod.title,
     modulePosition: mod.position,
+    resultText: mod.resultText,
+    durationMinutes: mod.durationMinutes,
     hasAccess: page.hasAccess,
     lessonsTotal,
     lessonsDone,

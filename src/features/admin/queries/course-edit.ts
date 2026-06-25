@@ -50,6 +50,8 @@ export function getCourseForEdit(courseId: string) {
           id: true,
           title: true,
           position: true,
+          resultText: true,
+          durationMinutes: true,
           isArchived: true,
           lessons: {
             orderBy: { position: 'asc' },
@@ -83,7 +85,10 @@ export function createModule(courseId: string, title: string, position: number) 
   return db.module.create({ data: { courseId, title, position }, select: { id: true } });
 }
 
-export function updateModule(id: string, data: { title: string; position?: number }) {
+export function updateModule(
+  id: string,
+  data: { title: string; position?: number; resultText: string | null; durationMinutes: number | null },
+) {
   return db.module.update({ where: { id }, data });
 }
 

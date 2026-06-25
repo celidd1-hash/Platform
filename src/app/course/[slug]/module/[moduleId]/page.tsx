@@ -4,6 +4,28 @@ import { AppShell } from '@/components/AppShell';
 import { auth } from '@/features/auth';
 import { getModulePage, ModuleLessons } from '@/features/courses';
 
+/** «102» → «1 час 42 минуты». Русское склонение часов/минут. */
+function formatDuration(totalMin: number): string {
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  const parts: string[] = [];
+  if (h > 0) parts.push(`${h} ${plural(h, 'час', 'часа', 'часов')}`);
+  if (m > 0) parts.push(`${m} ${plural(m, 'минута', 'минуты', 'минут')}`);
+  return parts.join(' ') || '0 минут';
+}
+
+function pluralLessons(n: number): string {
+  return plural(n, 'урок', 'урока', 'уроков');
+}
+
+function plural(n: number, one: string, few: string, many: string): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return few;
+  return many;
+}
+
 export default async function ModulePage({
   params,
 }: {
@@ -33,6 +55,12 @@ export default async function ModulePage({
         </div>
         <h1 className="mt-2 font-display text-3xl font-semibold">{mod.moduleTitle}</h1>
 
+        {mod.resultText && (
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
+            <span className="text-muted-2">Результат модуля:</span> {mod.resultText}
+          </p>
+        )}
+
         <div className="mt-5">
           <div className="mb-1 flex justify-between text-xs text-muted">
             <span>
@@ -47,6 +75,19 @@ export default async function ModulePage({
             />
           </div>
         </div>
+
+        {mod.durationMinutes != null && mod.durationMinutes > 0 && (
+          <div className="mt-4 flex items-center gap-2 text-sm text-muted">
+            <span aria-hidden>🕑</span>
+            <span>
+              Время прохождения модуля:{' '}
+              <span className="text-ink">{formatDuration(mod.durationMinutes)}</span>{' '}
+              <span className="text-muted-2">
+                ({mod.lessonsTotal} {pluralLessons(mod.lessonsTotal)})
+              </span>
+            </span>
+          </div>
+        )}
       </div>
 
       <section className="mt-8">

@@ -25,6 +25,8 @@ export const moduleSchema = z.object({
   courseId: z.string().min(1),
   title: z.string().trim().min(2).max(200),
   position: z.coerce.number().int().min(0).max(999).optional(),
+  resultText: z.string().trim().max(1000).optional(),
+  durationMinutes: z.coerce.number().int().min(0).max(100_000).optional(),
 });
 
 export const lessonSchema = z.object({
@@ -84,10 +86,15 @@ export async function saveModule(
   adminId: string,
   input: z.infer<typeof moduleSchema>,
 ): Promise<ActionResult<{ id: string }>> {
+  const resultText = input.resultText?.trim() || null;
+  const durationMinutes = input.durationMinutes && input.durationMinutes > 0 ? input.durationMinutes : null;
+
   if (input.id) {
     // Позицию трогаем только если её явно передали — иначе переименование сбросило бы порядок.
     await q.updateModule(input.id, {
       title: input.title,
+      resultText,
+      durationMinutes,
       ...(input.position !== undefined ? { position: input.position } : {}),
     });
     await writeAuditLog({ actorId: adminId, action: 'module_update', targetType: 'module', targetId: input.id });

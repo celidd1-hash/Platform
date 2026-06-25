@@ -94,12 +94,14 @@ model Course {
 }
 
 model Module {
-  id         String   @id @default(cuid())
-  courseId   String   @map("course_id")
-  title      String
-  position   Int
-  isArchived Boolean  @default(false) @map("is_archived")
-  deletedAt  DateTime? @map("deleted_at")
+  id              String   @id @default(cuid())
+  courseId        String   @map("course_id")
+  title           String
+  position        Int
+  resultText      String?  @map("result_text")
+  durationMinutes Int?     @map("duration_minutes")
+  isArchived      Boolean  @default(false) @map("is_archived")
+  deletedAt       DateTime? @map("deleted_at")
 
   course      Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
   lessons     Lesson[]

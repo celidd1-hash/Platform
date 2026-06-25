@@ -11,8 +11,63 @@ const inputCls =
 export interface EditorModule {
   id: string;
   title: string;
+  resultText: string | null;
+  durationMinutes: number | null;
   isArchived: boolean;
   lessons: Array<{ id: string; title: string; isArchived: boolean; requiresNote: boolean }>;
+}
+
+const labelCls = 'mb-1 block font-label text-[11px] uppercase tracking-[1px] text-muted-2';
+
+/** Форма настроек модуля: название, результат, длительность (плашка модуля у ученика). */
+function EditModuleForm({ module, courseId }: { module: EditorModule; courseId: string }) {
+  const [state, action] = useActionState(saveModuleAction, initial);
+  return (
+    <details className="border-t border-line">
+      <summary className="cursor-pointer select-none px-4 py-2 text-xs text-muted hover:text-gold">
+        ✎ Настройки модуля (результат, длительность)
+      </summary>
+      <form action={action} className="flex flex-col gap-3 px-4 pb-4 pt-1">
+        <input type="hidden" name="id" value={module.id} />
+        <input type="hidden" name="courseId" value={courseId} />
+        <label className="block">
+          <span className={labelCls}>Название</span>
+          <input name="title" defaultValue={module.title} className={`${inputCls} w-full`} />
+        </label>
+        <label className="block">
+          <span className={labelCls}>Результат модуля (показывается ученику в плашке)</span>
+          <textarea
+            name="resultText"
+            rows={2}
+            defaultValue={module.resultText ?? ''}
+            placeholder="Что ученик умеет/получает после модуля"
+            className={`${inputCls} w-full`}
+          />
+        </label>
+        <label className="block w-56">
+          <span className={labelCls}>Время прохождения (минуты)</span>
+          <input
+            name="durationMinutes"
+            type="number"
+            min={0}
+            defaultValue={module.durationMinutes ?? ''}
+            placeholder="напр. 102"
+            className={`${inputCls} w-full`}
+          />
+        </label>
+        <div className="flex items-center gap-3">
+          <button className="rounded-lg border border-gold/40 px-4 py-2 text-sm text-gold-bright hover:bg-[rgba(200,160,79,0.08)]">
+            Сохранить модуль
+          </button>
+          {state.status !== 'idle' && state.message && (
+            <span className={`text-xs ${state.status === 'ok' ? 'text-ok' : 'text-[var(--err)]'}`}>
+              {state.message}
+            </span>
+          )}
+        </div>
+      </form>
+    </details>
+  );
 }
 
 function AddModuleForm({ courseId }: { courseId: string }) {
@@ -70,6 +125,7 @@ export function StructureEditor({ courseId, modules }: { courseId: string; modul
             ))}
             {m.lessons.length === 0 && <li className="px-4 py-2 text-xs text-muted-2">Уроков нет</li>}
           </ul>
+          <EditModuleForm module={m} courseId={courseId} />
           <div className="border-t border-line bg-bg-2/50">
             <AddLessonForm moduleId={m.id} courseId={courseId} />
           </div>
