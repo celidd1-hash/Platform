@@ -45,6 +45,52 @@
     background: radial-gradient(circle, rgba(150, 110, 45, 0.16), transparent 65%);
   }
 
+  /* Фоновые золотистые искры по бокам — дрейф + мерцание (готический премиум-тон) */
+  .sparks {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .spark {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(216, 178, 102, 0.9);
+    box-shadow: 0 0 6px 1px rgba(200, 160, 79, 0.55);
+    opacity: 0;
+    will-change: transform, opacity;
+    animation: spark-drift var(--dur, 14s) ease-in-out infinite,
+      spark-twinkle var(--tw, 3.5s) ease-in-out infinite;
+    animation-delay: var(--delay, 0s);
+  }
+  @keyframes spark-drift {
+    0% {
+      transform: translate3d(0, 0, 0);
+    }
+    50% {
+      transform: translate3d(var(--dx, 12px), var(--dy, -34px), 0);
+    }
+    100% {
+      transform: translate3d(0, 0, 0);
+    }
+  }
+  @keyframes spark-twinkle {
+    0%,
+    100% {
+      opacity: 0.08;
+    }
+    50% {
+      opacity: var(--peak, 0.85);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .spark {
+      animation: none;
+      opacity: 0.25;
+    }
+  }
+
   /* Метка-заголовок секции с золотой линией (как в макете) */
   .sectlabel {
     display: flex;

@@ -1,6 +1,7 @@
 import { auth, SignOutButton } from '@/features/auth';
 import { Celebration } from '@/features/gamification';
 import { Sidebar } from './ui/Sidebar';
+import { AmbientSparks } from './ui/AmbientSparks';
 
 /**
  * Композиционная оболочка приложения: читает сессию и собирает «глупый» Sidebar
@@ -21,6 +22,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
     <div className="relative flex min-h-screen overflow-hidden bg-bg">
       <div className="glow glow-a" aria-hidden />
       <div className="glow glow-b" aria-hidden />
+      <AmbientSparks />
       <Sidebar user={user} signOutSlot={<SignOutButton />} />
       <main className="relative z-10 flex-1 overflow-y-auto p-8">{children}</main>
       <Celebration />
