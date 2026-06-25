@@ -55,7 +55,7 @@ export function CourseProgram({ modules }: { modules: CoursePageModule[] }) {
                     </span>
                   ) : (
                     <span className="flex-none rounded-lg border border-gold/40 px-4 py-1.5 font-label text-xs tracking-[1px] text-gold-bright">
-                      Открыть
+                      {lesson.completed ? 'Повторить' : 'Открыть'}
                     </span>
                   )}
                 </div>
