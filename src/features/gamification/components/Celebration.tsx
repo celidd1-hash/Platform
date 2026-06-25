@@ -10,7 +10,7 @@ import type { LessonCompletionReward } from '../service';
  */
 
 const EVENT = 'svetozar:celebrate';
-const VISIBLE_MS = 6000;
+const VISIBLE_MS = 7000;
 
 export function celebrate(detail: LessonCompletionReward): void {
   if (typeof window === 'undefined') return;
@@ -41,40 +41,73 @@ export function Celebration() {
   if (!data) return null;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-6 z-[120] flex justify-center px-4">
-      <div className="pointer-events-auto w-full max-w-sm rounded-token border border-gold/50 bg-panel/95 p-5 shadow-[0_8px_40px_rgba(0,0,0,0.5)] backdrop-blur">
-        <div className="flex items-start justify-between gap-3">
-          <div className="font-display text-lg font-semibold text-gold-bright">🎉 Поздравляем!</div>
-          <button
-            onClick={() => setData(null)}
-            className="text-muted-2 transition-colors hover:text-ink"
-            aria-label="Закрыть"
-          >
-            ✕
-          </button>
-        </div>
+    <div
+      onClick={() => setData(null)}
+      className="cl-backdrop fixed inset-0 z-[200] flex items-center justify-center bg-black/60 px-4 backdrop-blur-md"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="cl-card relative w-full max-w-lg overflow-hidden rounded-[28px] border border-gold/60 bg-gradient-to-b from-panel to-bg-2 px-8 py-10 text-center shadow-[0_0_80px_rgba(200,160,79,0.35)]"
+      >
+        {/* Золотое свечение за плашкой */}
+        <div
+          className="pointer-events-none absolute left-1/2 top-0 h-72 w-72 -translate-x-1/2 -translate-y-1/3 rounded-full bg-[radial-gradient(circle,rgba(200,160,79,0.35),transparent_70%)]"
+          aria-hidden
+        />
 
-        {data.xpAwarded > 0 && (
-          <div className="mt-2 text-sm text-ink">
-            Урок пройден — <span className="font-semibold text-gold-bright">+{data.xpAwarded} XP</span>
-          </div>
-        )}
+        <button
+          onClick={() => setData(null)}
+          className="absolute right-4 top-4 text-xl text-muted-2 transition-colors hover:text-ink"
+          aria-label="Закрыть"
+        >
+          ✕
+        </button>
 
-        {data.achievements.length > 0 && (
-          <div className="mt-3 flex flex-col gap-2">
-            {data.achievements.map((a, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-2 rounded-lg border border-gold/30 bg-bg-2 px-3 py-2 text-sm"
-              >
-                <span className="text-base">{a.icon ?? '🏆'}</span>
-                <span className="text-ink">Достижение: {a.title}</span>
-                {a.xp > 0 && <span className="ml-auto text-gold-bright">+{a.xp} XP</span>}
+        <div className="cl-pop relative">
+          <div className="cl-bounce mx-auto mb-3 text-6xl">🎉</div>
+          <h2 className="font-display text-4xl font-semibold text-gold-bright">Поздравляем!</h2>
+
+          {data.xpAwarded > 0 && (
+            <>
+              <p className="mt-2 text-base text-muted">Урок пройден</p>
+              <div className="mt-3 font-display text-6xl font-bold text-gold-bright drop-shadow-[0_2px_20px_rgba(200,160,79,0.5)]">
+                +{data.xpAwarded} XP
               </div>
-            ))}
-          </div>
-        )}
+            </>
+          )}
+
+          {data.achievements.length > 0 && (
+            <div className="mt-6 flex flex-col gap-2">
+              {data.achievements.map((a, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-3 rounded-xl border border-gold/40 bg-bg-2/80 px-4 py-3 text-left"
+                >
+                  <span className="text-2xl">{a.icon ?? '🏆'}</span>
+                  <span className="text-sm text-ink">
+                    Новое достижение
+                    <span className="block font-semibold text-gold-bright">{a.title}</span>
+                  </span>
+                  {a.xp > 0 && (
+                    <span className="ml-auto flex-none font-semibold text-gold-bright">+{a.xp} XP</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          <p className="mt-6 text-sm text-muted-2">Так держать — продолжай Путь Мастера ✨</p>
+        </div>
       </div>
+
+      <style>{`
+        @keyframes clFade { from { opacity:0 } to { opacity:1 } }
+        .cl-backdrop { animation: clFade 0.25s ease-out; }
+        @keyframes clPop { 0% { transform:scale(0.8); opacity:0 } 60% { transform:scale(1.04) } 100% { transform:scale(1); opacity:1 } }
+        .cl-card { animation: clPop 0.45s cubic-bezier(0.18,0.89,0.32,1.28); }
+        @keyframes clBounce { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-10px) } }
+        .cl-bounce { animation: clBounce 1.6s ease-in-out infinite; }
+      `}</style>
     </div>
   );
 }
@@ -83,7 +116,7 @@ export function Celebration() {
 function fireConfetti(): void {
   if (typeof document === 'undefined') return;
   const canvas = document.createElement('canvas');
-  canvas.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:130';
+  canvas.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:210';
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
   document.body.appendChild(canvas);
