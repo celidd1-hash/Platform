@@ -138,3 +138,49 @@ export async function getCoursePage(slug: string, userId: string): Promise<Cours
     modules,
   };
 }
+
+export interface ModulePageData {
+  courseTitle: string;
+  courseSlug: string;
+  moduleId: string;
+  moduleTitle: string;
+  modulePosition: number;
+  hasAccess: boolean;
+  lessonsTotal: number;
+  lessonsDone: number;
+  progressPct: number;
+  lessons: CoursePageLesson[];
+}
+
+/**
+ * Данные страницы отдельного модуля: уроки модуля + прогресс по модулю.
+ * Блокировки считаются по всему курсу (последовательное открытие), потом
+ * выбирается нужный модуль. Возвращает null, если курс/модуль не найдены.
+ */
+export async function getModulePage(
+  slug: string,
+  moduleId: string,
+  userId: string,
+): Promise<ModulePageData | null> {
+  const page = await getCoursePage(slug, userId);
+  if (!page) return null;
+
+  const mod = page.modules.find((m) => m.id === moduleId);
+  if (!mod) return null;
+
+  const lessonsTotal = mod.lessons.length;
+  const lessonsDone = mod.lessons.filter((l) => l.completed).length;
+
+  return {
+    courseTitle: page.title,
+    courseSlug: page.slug,
+    moduleId: mod.id,
+    moduleTitle: mod.title,
+    modulePosition: mod.position,
+    hasAccess: page.hasAccess,
+    lessonsTotal,
+    lessonsDone,
+    progressPct: computeProgressPct(lessonsTotal, lessonsDone),
+    lessons: mod.lessons,
+  };
+}

@@ -54,7 +54,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
 
       <section>
         <div className="sectlabel mb-4">Программа курса</div>
-        <CourseProgram modules={course.modules} />
+        <CourseProgram slug={course.slug} modules={course.modules} />
       </section>
     </AppShell>
   );
