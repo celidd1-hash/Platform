@@ -32,7 +32,6 @@ export const lessonSchema = z.object({
   moduleId: z.string().min(1),
   title: z.string().trim().min(2).max(200),
   position: z.coerce.number().int().min(0).max(999).optional(),
-  lessonSummaryMd: z.string().trim().max(2000).optional(),
   contentMd: z.string().trim().max(50_000).optional(),
   videoUrl: z.string().trim().max(500).optional(),
   materialsUrl: z.string().trim().url('Некорректная ссылка на материалы').max(1000).optional(),
@@ -112,7 +111,6 @@ export async function saveLesson(
 ): Promise<ActionResult<{ id: string }>> {
   const data = {
     title: input.title,
-    lessonSummaryMd: input.lessonSummaryMd?.trim() || null,
     contentMd: input.contentMd?.trim() || null,
     videoUrl: input.videoUrl?.trim() || null,
     materialsUrl: input.materialsUrl?.trim() || null,

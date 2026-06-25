@@ -13,7 +13,6 @@ export interface LessonFormValues {
   moduleId: string;
   title: string;
   position: number;
-  lessonSummaryMd: string | null;
   contentMd: string | null;
   videoUrl: string | null;
   materialsUrl: string | null;
@@ -64,11 +63,6 @@ export function LessonForm({ lesson }: { lesson: LessonFormValues }) {
         <span className="mt-1 block text-[11px] text-muted-2">
           Необязательно. Откроется ученику кнопкой после просмотра видео и отправки ДЗ.
         </span>
-      </label>
-
-      <label className="block">
-        <span className={labelCls}>Кратко об уроке (только для админки, ученику не показывается)</span>
-        <textarea name="lessonSummaryMd" rows={3} defaultValue={lesson.lessonSummaryMd ?? ''} className={inputCls} />
       </label>
 
       <label className="block">

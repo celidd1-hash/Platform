@@ -69,7 +69,6 @@ export async function saveLessonAction(_prev: EditState, formData: FormData): Pr
     moduleId: formData.get('moduleId'),
     title: formData.get('title'),
     position: formData.get('position') || undefined,
-    lessonSummaryMd: formData.get('lessonSummaryMd') || undefined,
     contentMd: formData.get('contentMd') || undefined,
     videoUrl: formData.get('videoUrl') || undefined,
     materialsUrl: formData.get('materialsUrl') || undefined,

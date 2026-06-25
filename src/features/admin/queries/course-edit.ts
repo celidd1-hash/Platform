@@ -97,7 +97,6 @@ export function createLesson(
     title: string;
     position: number;
     contentMd: string | null;
-    lessonSummaryMd: string | null;
     videoUrl: string | null;
     materialsUrl: string | null;
     requiresNote: boolean;
@@ -176,7 +175,6 @@ export function updateLesson(
     title: string;
     position: number;
     contentMd: string | null;
-    lessonSummaryMd: string | null;
     videoUrl: string | null;
     materialsUrl: string | null;
     requiresNote: boolean;
