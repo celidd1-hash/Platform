@@ -16,15 +16,15 @@ export function CourseProgram({ slug, modules }: { slug: string; modules: Course
           <Link
             key={module.id}
             href={`/course/${slug}/module/${module.id}`}
-            className="flex items-center gap-4 rounded-token border border-line bg-panel px-5 py-5 transition-colors hover:border-gold/40"
+            className="flex items-center gap-5 rounded-token border border-line bg-panel px-7 py-6 transition-colors hover:border-gold/40"
           >
             <div className="min-w-0 flex-1">
-              <div className="font-label text-sm tracking-[1px] text-gold">{module.title}</div>
-              <div className="mt-1 font-label text-[11px] uppercase tracking-[1px] text-muted-2">
+              <div className="font-label text-lg tracking-[1px] text-gold">{module.title}</div>
+              <div className="mt-1.5 font-label text-xs uppercase tracking-[1px] text-muted-2">
                 {total === 0 ? 'Уроков пока нет' : `${done} из ${total} уроков пройдено`}
               </div>
             </div>
-            <span className="flex-none text-gold-bright" aria-hidden>
+            <span className="flex-none text-2xl text-gold-bright" aria-hidden>
               →
             </span>
           </Link>
