@@ -112,11 +112,12 @@ export function StructureEditor({ courseId, modules }: { courseId: string; modul
             </span>
           </div>
           <ul>
-            {m.lessons.map((l) => (
+            {m.lessons.map((l, i) => (
               <li key={l.id} className="flex items-center justify-between border-b border-line px-4 py-2.5 last:border-b-0">
-                <span className={`text-sm ${l.isArchived ? 'text-muted-2 line-through' : 'text-ink'}`}>
+                <span className={`flex items-center gap-2 text-sm ${l.isArchived ? 'text-muted-2 line-through' : 'text-ink'}`}>
+                  <span className="font-label text-xs text-muted-2 tabular-nums">{i + 1}.</span>
                   {l.title}
-                  {!l.requiresNote && <span className="ml-2 text-[10px] text-muted-2">без ДЗ</span>}
+                  {!l.requiresNote && <span className="ml-1 text-[10px] text-muted-2">без ДЗ</span>}
                 </span>
                 <Link href={`/admin/lesson/${l.id}/edit`} className="text-xs text-gold hover:underline">
                   Редактировать
