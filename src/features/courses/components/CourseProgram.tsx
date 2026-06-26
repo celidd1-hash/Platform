@@ -30,7 +30,7 @@ export function CourseProgram({ slug, modules }: { slug: string; modules: Course
               </div>
             </div>
             {cta && (
-              <span className="flex-none rounded-lg border border-gold/40 px-5 py-2 font-label text-sm tracking-[1px] text-gold-bright">
+              <span className="flex-none w-40 rounded-lg border border-gold/40 py-2 text-center font-label text-sm tracking-[1px] text-gold-bright">
                 {cta}
               </span>
             )}
