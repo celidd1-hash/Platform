@@ -235,8 +235,10 @@ export function CourseManager({ courses }: { courses: AdminCourseNode[] }) {
                       key={lesson.id}
                       className="flex items-center justify-between gap-3 border-b border-line px-4 py-2 last:border-b-0"
                     >
-                      <span className={`flex items-center gap-2 text-sm ${lesson.isArchived ? 'text-muted-2 line-through' : 'text-ink'}`}>
-                        <span className="font-label text-xs text-muted-2 tabular-nums">{i + 1}.</span>
+                      <span className={`flex items-center gap-3 text-sm ${lesson.isArchived ? 'text-muted-2 line-through' : 'text-ink'}`}>
+                        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full border border-gold/50 font-display text-base text-gold-bright tabular-nums">
+                          {i + 1}
+                        </span>
                         {lesson.title}
                       </span>
                       <div className="flex flex-none items-center gap-2">
