@@ -12,6 +12,11 @@ export function CourseProgram({ slug, modules }: { slug: string; modules: Course
         const total = module.lessons.length;
         const done = module.lessons.filter((l) => l.completed).length;
 
+        // Кнопка по прогрессу модуля: ещё не начат → Открыть, в процессе → Продолжить,
+        // всё пройдено → Повторить. У пустого модуля кнопки нет.
+        const cta =
+          total === 0 ? null : done === 0 ? 'Открыть' : done >= total ? 'Повторить' : 'Продолжить';
+
         return (
           <Link
             key={module.id}
@@ -24,9 +29,11 @@ export function CourseProgram({ slug, modules }: { slug: string; modules: Course
                 {total === 0 ? 'Уроков пока нет' : `${done} из ${total} уроков пройдено`}
               </div>
             </div>
-            <span className="flex-none text-2xl text-gold-bright" aria-hidden>
-              →
-            </span>
+            {cta && (
+              <span className="flex-none rounded-lg border border-gold/40 px-5 py-2 font-label text-sm tracking-[1px] text-gold-bright">
+                {cta}
+              </span>
+            )}
           </Link>
         );
       })}
