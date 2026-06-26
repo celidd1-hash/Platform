@@ -205,6 +205,32 @@ export async function getLeaderboardSince(since: Date, limit: number) {
     .filter((x): x is NonNullable<typeof x> => x !== null);
 }
 
+/** Активные доступы со списком id живых уроков — для прогресса в рейтинге. */
+export function listActiveEnrollmentsLessons(userIds: string[]) {
+  return db.enrollment.findMany({
+    where: { userId: { in: userIds }, status: 'active' },
+    select: {
+      userId: true,
+      course: {
+        select: {
+          modules: {
+            where: { isArchived: false, deletedAt: null },
+            select: { lessons: { where: { isArchived: false, deletedAt: null }, select: { id: true } } },
+          },
+        },
+      },
+    },
+  });
+}
+
+/** Завершённые уроки по пачке учеников — для прогресса в рейтинге. */
+export function listCompletedLessonsForUsers(userIds: string[]) {
+  return db.lessonProgress.findMany({
+    where: { userId: { in: userIds }, status: 'completed' },
+    select: { userId: true, lessonId: true },
+  });
+}
+
 export function setRatingVisibility(userId: string, isPublic: boolean) {
   return db.user.update({ where: { id: userId }, data: { isPublicInRating: isPublic } });
 }

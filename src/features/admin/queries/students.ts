@@ -70,6 +70,32 @@ export function getStudentCompletedLessonIds(userId: string) {
     .then((rows) => rows.map((r) => r.lessonId));
 }
 
+/** Активные доступы со списком id живых уроков — для подсчёта прогресса по пачке учеников. */
+export function listActiveEnrollmentsLessons(userIds: string[]) {
+  return db.enrollment.findMany({
+    where: { userId: { in: userIds }, status: 'active' },
+    select: {
+      userId: true,
+      course: {
+        select: {
+          modules: {
+            where: { isArchived: false, deletedAt: null },
+            select: { lessons: { where: { isArchived: false, deletedAt: null }, select: { id: true } } },
+          },
+        },
+      },
+    },
+  });
+}
+
+/** Завершённые уроки по пачке учеников. */
+export function listCompletedLessonsForUsers(userIds: string[]) {
+  return db.lessonProgress.findMany({
+    where: { userId: { in: userIds }, status: 'completed' },
+    select: { userId: true, lessonId: true },
+  });
+}
+
 export function getStudentHomework(userId: string) {
   return db.homework.findMany({
     where: { userId },

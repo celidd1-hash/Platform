@@ -60,9 +60,10 @@ export default async function AdminStudentsPage({
       </form>
 
       <div className="overflow-hidden rounded-token border border-line">
-        <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 border-b border-line bg-panel-2 px-5 py-2 font-label text-[10px] uppercase tracking-[2px] text-muted-2">
+        <div className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-4 border-b border-line bg-panel-2 px-5 py-2 font-label text-[10px] uppercase tracking-[2px] text-muted-2">
           <span>Ученик</span>
           <span>Курсов</span>
+          <span>Прогресс</span>
           <span>XP</span>
           <span>Статус</span>
           <span></span>
@@ -70,13 +71,14 @@ export default async function AdminStudentsPage({
         {students.map((s) => (
           <div
             key={s.id}
-            className="grid grid-cols-[1fr_auto_auto_auto_auto] items-center gap-4 border-b border-line px-5 py-3 text-sm transition-colors last:border-b-0 hover:bg-[rgba(200,160,79,0.05)]"
+            className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] items-center gap-4 border-b border-line px-5 py-3 text-sm transition-colors last:border-b-0 hover:bg-[rgba(200,160,79,0.05)]"
           >
             <Link href={`/admin/students/${s.id}`} className="min-w-0 truncate hover:text-gold">
               <span className="text-ink">{s.name}</span>
               <span className="ml-2 text-muted-2">{s.email}</span>
             </Link>
             <span className="text-center text-muted">{s.courses}</span>
+            <span className="text-center text-gold">{s.progressPct != null ? `${s.progressPct}%` : '—'}</span>
             <span className="text-center text-gold-bright">{s.xp}</span>
             <span className="text-center">
               {archived ? (

@@ -19,21 +19,49 @@ export interface StudentRow {
   streakDays: number;
   isBlocked: boolean;
   courses: number;
+  /** Общий прогресс по всем доступным курсам: завершённые уроки / всего уроков. null — нет доступа. */
+  progressPct: number | null;
   createdAt: Date;
 }
 
 export async function listStudents(search?: string, archived = false): Promise<StudentRow[]> {
   const rows = await q.listStudents(search?.trim() || undefined, archived);
-  return rows.map((r) => ({
-    id: r.id,
-    name: r.name,
-    email: r.email,
-    xp: r.xp,
-    streakDays: r.streakDays,
-    isBlocked: r.isBlocked,
-    courses: r._count.enrollments,
-    createdAt: r.createdAt,
-  }));
+  const ids = rows.map((r) => r.id);
+
+  // Прогресс по пачке: суммарно живые уроки доступных курсов и завершённые уроки на ученика.
+  const [enrollments, completed] = ids.length
+    ? await Promise.all([q.listActiveEnrollmentsLessons(ids), q.listCompletedLessonsForUsers(ids)])
+    : [[], []];
+
+  // На ученика: множество id уроков доступных курсов (только живые).
+  const lessonsByUser = new Map<string, Set<string>>();
+  for (const e of enrollments) {
+    let set = lessonsByUser.get(e.userId);
+    if (!set) lessonsByUser.set(e.userId, (set = new Set()));
+    for (const m of e.course.modules) for (const l of m.lessons) set.add(l.id);
+  }
+  // Завершённые — только в пределах уроков доступных курсов.
+  const doneByUser = new Map<string, number>();
+  for (const c of completed) {
+    if (lessonsByUser.get(c.userId)?.has(c.lessonId)) {
+      doneByUser.set(c.userId, (doneByUser.get(c.userId) ?? 0) + 1);
+    }
+  }
+
+  return rows.map((r) => {
+    const total = lessonsByUser.get(r.id)?.size ?? 0;
+    return {
+      id: r.id,
+      name: r.name,
+      email: r.email,
+      xp: r.xp,
+      streakDays: r.streakDays,
+      isBlocked: r.isBlocked,
+      courses: r._count.enrollments,
+      progressPct: total > 0 ? computeProgressPct(total, doneByUser.get(r.id) ?? 0) : null,
+      createdAt: r.createdAt,
+    };
+  });
 }
 
 export interface StudentCabinet {

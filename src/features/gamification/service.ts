@@ -6,6 +6,7 @@ import {
   type UserStats,
 } from '@/lib/gamification';
 import { XP_EVENT_TYPES } from '@/config/constants';
+import { computeProgressPct } from '@/lib/progress';
 import * as q from './queries';
 
 /**
@@ -258,6 +259,8 @@ export interface LeaderboardRow {
   avatarUrl: string | null;
   xp: number;
   streakDays: number;
+  /** Общий прогресс по доступным курсам: завершённые уроки / всего. null — нет доступа. */
+  progressPct: number | null;
   isYou: boolean;
 }
 
@@ -277,13 +280,36 @@ export async function getLeaderboard(
     rows = await q.getLeaderboardAllTime(limit);
   }
 
-  return rows.map((r, i) => ({
-    rank: i + 1,
-    userId: r.id,
-    name: r.name,
-    avatarUrl: r.avatarUrl,
-    xp: r.xp,
-    streakDays: r.streakDays,
-    isYou: r.id === userId,
-  }));
+  const ids = rows.map((r) => r.id);
+  const [enrollments, completed] = ids.length
+    ? await Promise.all([q.listActiveEnrollmentsLessons(ids), q.listCompletedLessonsForUsers(ids)])
+    : [[], []];
+
+  // На ученика: множество id уроков доступных курсов (только живые).
+  const lessonsByUser = new Map<string, Set<string>>();
+  for (const e of enrollments) {
+    let set = lessonsByUser.get(e.userId);
+    if (!set) lessonsByUser.set(e.userId, (set = new Set()));
+    for (const m of e.course.modules) for (const l of m.lessons) set.add(l.id);
+  }
+  const doneByUser = new Map<string, number>();
+  for (const c of completed) {
+    if (lessonsByUser.get(c.userId)?.has(c.lessonId)) {
+      doneByUser.set(c.userId, (doneByUser.get(c.userId) ?? 0) + 1);
+    }
+  }
+
+  return rows.map((r, i) => {
+    const total = lessonsByUser.get(r.id)?.size ?? 0;
+    return {
+      rank: i + 1,
+      userId: r.id,
+      name: r.name,
+      avatarUrl: r.avatarUrl,
+      xp: r.xp,
+      streakDays: r.streakDays,
+      progressPct: total > 0 ? computeProgressPct(total, doneByUser.get(r.id) ?? 0) : null,
+      isYou: r.id === userId,
+    };
+  });
 }

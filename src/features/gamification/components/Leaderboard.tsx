@@ -61,9 +61,10 @@ export function Leaderboard({
       </div>
 
       <div className="overflow-hidden rounded-token border border-line">
-        <div className="grid grid-cols-[48px_1fr_auto_auto] gap-3 border-b border-line bg-panel-2 px-4 py-2 font-label text-[10px] uppercase tracking-[2px] text-muted-2">
+        <div className="grid grid-cols-[48px_1fr_auto_auto_auto] gap-3 border-b border-line bg-panel-2 px-4 py-2 font-label text-[10px] uppercase tracking-[2px] text-muted-2">
           <span>#</span>
           <span>Ученик</span>
+          <span>Прогресс</span>
           <span>Стрик</span>
           <span>XP</span>
         </div>
@@ -71,7 +72,7 @@ export function Leaderboard({
         {rows.map((row) => (
           <div
             key={row.userId}
-            className={`grid grid-cols-[48px_1fr_auto_auto] items-center gap-3 border-b border-line px-4 py-3 last:border-b-0 ${
+            className={`grid grid-cols-[48px_1fr_auto_auto_auto] items-center gap-3 border-b border-line px-4 py-3 last:border-b-0 ${
               row.isYou ? 'border-l-2 border-l-gold bg-[rgba(200,160,79,0.08)]' : ''
             }`}
           >
@@ -84,6 +85,7 @@ export function Leaderboard({
                 {row.name} {row.isYou && <span className="text-gold-bright">(вы)</span>}
               </span>
             </span>
+            <span className="text-sm text-gold">{row.progressPct != null ? `${row.progressPct}%` : '—'}</span>
             <span className="text-sm text-muted-2">🔥 {row.streakDays}</span>
             <span className="font-display text-lg text-gold-bright">{row.xp}</span>
           </div>
