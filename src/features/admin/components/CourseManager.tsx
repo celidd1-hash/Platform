@@ -230,12 +230,13 @@ export function CourseManager({ courses }: { courses: AdminCourseNode[] }) {
                   />
                 </div>
                 <ul className="border-t border-line">
-                  {module.lessons.map((lesson) => (
+                  {module.lessons.map((lesson, i) => (
                     <li
                       key={lesson.id}
                       className="flex items-center justify-between gap-3 border-b border-line px-4 py-2 last:border-b-0"
                     >
-                      <span className={`text-sm ${lesson.isArchived ? 'text-muted-2 line-through' : 'text-ink'}`}>
+                      <span className={`flex items-center gap-2 text-sm ${lesson.isArchived ? 'text-muted-2 line-through' : 'text-ink'}`}>
+                        <span className="font-label text-xs text-muted-2 tabular-nums">{i + 1}.</span>
                         {lesson.title}
                       </span>
                       <div className="flex flex-none items-center gap-2">
