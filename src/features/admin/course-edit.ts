@@ -39,6 +39,7 @@ export const lessonSchema = z.object({
   materialsUrl: z.string().trim().url('Некорректная ссылка на материалы').max(1000).optional(),
   requiresNote: z.boolean().default(true),
   minNoteLength: z.coerce.number().int().min(0).max(10_000).optional(),
+  durationMinutes: z.coerce.number().int().min(0).max(100_000).optional(),
   xpReward: z.coerce.number().int().min(0).max(10_000).default(50),
 });
 
@@ -123,6 +124,7 @@ export async function saveLesson(
     materialsUrl: input.materialsUrl?.trim() || null,
     requiresNote: input.requiresNote,
     minNoteLength: input.minNoteLength && input.minNoteLength > 0 ? input.minNoteLength : null,
+    durationMinutes: input.durationMinutes && input.durationMinutes > 0 ? input.durationMinutes : null,
     xpReward: input.xpReward,
   };
 

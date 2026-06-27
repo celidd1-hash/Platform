@@ -76,6 +76,7 @@ export async function saveLessonAction(_prev: EditState, formData: FormData): Pr
     materialsUrl: formData.get('materialsUrl') || undefined,
     requiresNote: formData.get('requiresNote') === 'on',
     minNoteLength: formData.get('minNoteLength') || undefined,
+    durationMinutes: formData.get('durationMinutes') || undefined,
     xpReward: formData.get('xpReward') || undefined,
   });
   if (!parsed.success) return { status: 'error', message: 'Проверьте поля урока' };

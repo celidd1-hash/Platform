@@ -13,6 +13,7 @@ export interface LessonFormValues {
   moduleId: string;
   title: string;
   position: number;
+  durationMinutes: number | null;
   contentMd: string | null;
   videoUrl: string | null;
   materialsUrl: string | null;
@@ -43,6 +44,17 @@ export function LessonForm({ lesson }: { lesson: LessonFormValues }) {
         <label className="block w-40">
           <span className={labelCls}>XP за урок</span>
           <input name="xpReward" type="number" min={0} defaultValue={lesson.xpReward} className={inputCls} />
+        </label>
+        <label className="block w-48">
+          <span className={labelCls}>Длительность (минуты)</span>
+          <input
+            name="durationMinutes"
+            type="number"
+            min={0}
+            defaultValue={lesson.durationMinutes ?? ''}
+            placeholder="напр. 31"
+            className={inputCls}
+          />
         </label>
       </div>
 

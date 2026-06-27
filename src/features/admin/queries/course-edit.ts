@@ -106,6 +106,7 @@ export function createLesson(
     materialsUrl: string | null;
     requiresNote: boolean;
     minNoteLength: number | null;
+    durationMinutes: number | null;
     xpReward: number;
   },
 ) {
@@ -125,6 +126,7 @@ export function getLessonForEdit(lessonId: string) {
       materialsUrl: true,
       requiresNote: true,
       minNoteLength: true,
+      durationMinutes: true,
       xpReward: true,
       module: { select: { id: true, title: true, course: { select: { id: true, title: true } } } },
       files: {
@@ -184,6 +186,7 @@ export function updateLesson(
     materialsUrl: string | null;
     requiresNote: boolean;
     minNoteLength: number | null;
+    durationMinutes: number | null;
     xpReward: number;
   },
 ) {

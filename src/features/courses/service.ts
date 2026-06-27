@@ -64,6 +64,7 @@ export interface CoursePageLesson {
   id: string;
   title: string;
   position: number;
+  durationMinutes: number | null;
   completed: boolean;
   locked: boolean;
 }
@@ -128,6 +129,7 @@ export async function getCoursePage(slug: string, userId: string): Promise<Cours
       id: l.id,
       title: l.title,
       position: l.position,
+      durationMinutes: l.durationMinutes,
       completed: completed.has(l.id),
       // Без доступа всё закрыто; с доступом — по последовательному порядку.
       locked: !hasAccess || (lockedById[l.id] ?? false),
