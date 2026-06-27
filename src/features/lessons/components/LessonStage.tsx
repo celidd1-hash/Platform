@@ -53,7 +53,7 @@ export function LessonStage({
   const hasMaterials = files.length > 0 || Boolean(materialsUrl);
   const canFinish = watchedPct >= THRESHOLD_PCT;
 
-  // Кнопка «Завершить урок»: подтверждаем зачёт при просмотре ≥80%. Для урока с ДЗ зачёт
+  // Кнопка «Завершить урок»: доступна после полного просмотра (100%). Для урока с ДЗ зачёт
   // даёт проверка ДЗ — кнопка фиксирует просмотр и подсказывает выполнить задание.
   function finish() {
     if (!canFinish || pending) return;

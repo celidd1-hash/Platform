@@ -30,7 +30,7 @@ export function LessonPlayer({
   lockSeek?: boolean;
   /** Сохранить позицию (сек). Дросселируется — вызывается не чаще раза в 10 с. */
   onSavePosition?: (seconds: number) => void;
-  /** Видео просмотрено (≥80%, LESSON.WATCHED_THRESHOLD). */
+  /** Видео просмотрено полностью (LESSON.WATCHED_THRESHOLD = 100%). */
   onWatched?: () => void;
   /** Длительность видео (сек) известна — для плашки длительности. */
   onMeta?: (durationSec: number) => void;
@@ -46,6 +46,10 @@ export function LessonPlayer({
   refreshSrcRef.current = refreshSrc;
   const onMetaRef = useRef(onMeta);
   onMetaRef.current = onMeta;
+  const onWatchedRef = useRef(onWatched);
+  onWatchedRef.current = onWatched;
+  const onProgressRef = useRef(onProgress);
+  onProgressRef.current = onProgress;
   const lastPctRef = useRef(-1);
   const lastRefreshRef = useRef(0);
   // Максимально просмотренная точка (сек) — потолок перемотки при lockSeek.
@@ -114,10 +118,21 @@ export function LessonPlayer({
     video.addEventListener('seeking', clampSeek);
     video.addEventListener('seeked', clampSeek);
 
+    // Полный просмотр: конец видео гарантирует 100% и отметку просмотра (без зачёта).
+    const onEnded = () => {
+      onProgressRef.current?.(100);
+      if (!watchedSentRef.current) {
+        watchedSentRef.current = true;
+        onWatchedRef.current?.();
+      }
+    };
+    video.addEventListener('ended', onEnded);
+
     return () => {
       video.removeEventListener('loadedmetadata', onLoaded);
       video.removeEventListener('seeking', clampSeek);
       video.removeEventListener('seeked', clampSeek);
+      video.removeEventListener('ended', onEnded);
       hls?.destroy();
     };
   }, [src, initialPosition]);
