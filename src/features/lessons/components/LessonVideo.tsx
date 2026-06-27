@@ -13,12 +13,15 @@ export function LessonVideo({
   lessonId,
   src,
   initialPosition,
+  lockSeek = false,
   onMeta,
   onProgress,
 }: {
   lessonId: string;
   src: string | null;
   initialPosition: number;
+  /** Запрет перемотки вперёд при первом просмотре (при повторе урока — false). */
+  lockSeek?: boolean;
   /** Длительность видео (сек) известна — для плашки длительности. */
   onMeta?: (durationSec: number) => void;
   /** Доля просмотра 0..100 — для плашки «просмотрено видео». */
@@ -40,6 +43,7 @@ export function LessonVideo({
     <LessonPlayer
       src={src}
       initialPosition={initialPosition}
+      lockSeek={lockSeek}
       refreshSrc={refreshSrc}
       onMeta={onMeta}
       onProgress={onProgress}

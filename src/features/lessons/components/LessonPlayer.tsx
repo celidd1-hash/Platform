@@ -11,9 +11,13 @@ const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
  * без чужого брендинга. Запоминание позиции, скорости 0.5–2×, запрет скачивания.
  * Поток приходит подписанной HLS-ссылкой с коротким TTL (signed URL генерит сервер).
  */
+/** Допуск (сек) при запрете перемотки — чтобы не реагировать на дребезг позиции. */
+const SEEK_TOLERANCE_SEC = 1.5;
+
 export function LessonPlayer({
   src,
   initialPosition = 0,
+  lockSeek = false,
   onSavePosition,
   onWatched,
   onMeta,
@@ -22,6 +26,8 @@ export function LessonPlayer({
 }: {
   src: string | null;
   initialPosition?: number;
+  /** Запрет перемотки вперёд дальше просмотренного (первый просмотр; при повторе — false). */
+  lockSeek?: boolean;
   /** Сохранить позицию (сек). Дросселируется — вызывается не чаще раза в 10 с. */
   onSavePosition?: (seconds: number) => void;
   /** Видео просмотрено (≥80%, LESSON.WATCHED_THRESHOLD). */
@@ -42,6 +48,10 @@ export function LessonPlayer({
   onMetaRef.current = onMeta;
   const lastPctRef = useRef(-1);
   const lastRefreshRef = useRef(0);
+  // Максимально просмотренная точка (сек) — потолок перемотки при lockSeek.
+  const maxTimeRef = useRef(initialPosition);
+  const lockSeekRef = useRef(lockSeek);
+  lockSeekRef.current = lockSeek;
   const [speed, setSpeed] = useState(1);
 
   useEffect(() => {
@@ -88,12 +98,24 @@ export function LessonPlayer({
       if (video.duration > 0) onMetaRef.current?.(video.duration);
       if (initialPosition > 0 && initialPosition < video.duration) {
         video.currentTime = initialPosition;
+        maxTimeRef.current = Math.max(maxTimeRef.current, initialPosition);
       }
     };
     video.addEventListener('loadedmetadata', onLoaded);
 
+    // Запрет перемотки вперёд (первый просмотр): возвращаем на максимально просмотренную точку.
+    const onSeeking = () => {
+      if (!lockSeekRef.current) return;
+      const max = maxTimeRef.current;
+      if (video.currentTime > max + SEEK_TOLERANCE_SEC) {
+        video.currentTime = max;
+      }
+    };
+    video.addEventListener('seeking', onSeeking);
+
     return () => {
       video.removeEventListener('loadedmetadata', onLoaded);
+      video.removeEventListener('seeking', onSeeking);
       hls?.destroy();
     };
   }, [src, initialPosition]);
@@ -101,6 +123,9 @@ export function LessonPlayer({
   function handleTimeUpdate() {
     const video = videoRef.current;
     if (!video) return;
+
+    // Продвигаем потолок перемотки по мере просмотра (для запрета мотать вперёд).
+    if (video.currentTime > maxTimeRef.current) maxTimeRef.current = video.currentTime;
 
     const now = Math.floor(video.currentTime);
     if (onSavePosition && now - lastSavedRef.current >= 10) {

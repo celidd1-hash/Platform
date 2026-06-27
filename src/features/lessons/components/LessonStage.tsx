@@ -77,6 +77,7 @@ export function LessonStage({
           lessonId={lessonId}
           src={src}
           initialPosition={initialPosition}
+          lockSeek={!completed}
           onMeta={(d) => setDurationSec(d)}
           onProgress={(p) => setWatchedPct((prev) => Math.max(prev, p))}
         />
