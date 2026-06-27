@@ -41,6 +41,11 @@ export const HOMEWORK = {
   DEFAULT_PASS_SCORE: 70,
   /** Строгость проверки по умолчанию. */
   DEFAULT_STRICTNESS: 'normal' as 'lenient' | 'normal' | 'strict',
+  /**
+   * ВРЕМЕННО (тест): для этих email сдача ДЗ отключена — ученик смотрит уроки как все,
+   * следующий открывается по кнопке «Завершить урок», без ожидания зачёта ДЗ. Email в нижнем регистре.
+   */
+  BYPASS_EMAILS: ['spiglazov1992@gmail.com'] as string[],
 } as const;
 
 /** Вердикты проверки ДЗ. */

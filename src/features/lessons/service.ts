@@ -7,6 +7,13 @@ import { onLessonCompleted, type LessonCompletionReward } from '@/features/gamif
 import { hasSubmittedHomework } from '@/features/homework';
 import * as q from './queries';
 
+/** ВРЕМЕННО (тест): для email из HOMEWORK.BYPASS_EMAILS сдача ДЗ отключена (ТЗ §3.4). */
+async function isHomeworkBypassed(userId: string): Promise<boolean> {
+  if (HOMEWORK.BYPASS_EMAILS.length === 0) return false;
+  const email = await q.getUserEmail(userId);
+  return email ? HOMEWORK.BYPASS_EMAILS.includes(email) : false;
+}
+
 /**
  * Бизнес-логика урока (ТЗ §3.3): доступ по enrollment + ownership, последовательное
  * открытие, подписанная ссылка на видео, прогресс. Контроль доступа — на сервере (ТЗ §6А.3).
@@ -67,15 +74,20 @@ export async function getLessonForUser(lessonId: string, userId: string): Promis
   if (!lesson) return { kind: 'not_found' };
 
   const course = lesson.module.course;
+  const bypassHomework = await isHomeworkBypassed(userId);
   const [hasAccess, orderedLessons, advancedIds, progress, homeworkPassed] = await Promise.all([
     q.hasActiveEnrollment(userId, course.id),
     q.listCourseLessonIds(course.id),
-    q.listAdvancedLessonIdsForCourse(userId, course.id),
+    q.listAdvancedLessonIdsForCourse(userId, course.id, bypassHomework),
     q.getProgress(userId, lessonId),
     q.hasPassedHomework(userId, lessonId),
   ]);
 
   if (!hasAccess) return { kind: 'access_denied', courseSlug: course.slug };
+
+  // Для пользователя с обходом ДЗ урок ведёт себя как урок без ДЗ: блок ДЗ скрыт,
+  // переход дальше — по кнопке «Завершить урок».
+  const requiresNote = bypassHomework ? false : lesson.requiresNote;
 
   // Следующий урок открывает зачтённое ДЗ предыдущего (урок без ДЗ — завершение по кнопке).
   const orderedIds = orderedLessons.map((l) => l.id);
@@ -87,7 +99,7 @@ export async function getLessonForUser(lessonId: string, userId: string): Promis
   const hasMaterials = lesson.files.length > 0 || Boolean(lesson.materialsUrl);
   const filesUnlocked = !hasMaterials
     ? false
-    : await areFilesUnlocked(userId, lessonId, lesson.requiresNote, Boolean(progress?.videoWatchedAt));
+    : await areFilesUnlocked(userId, lessonId, requiresNote, Boolean(progress?.videoWatchedAt));
 
   // Подписанная HLS-ссылка с коротким TTL (ТЗ §6А.7) — только для доступного ученика.
   let videoSignedUrl: string | null = null;
@@ -110,7 +122,7 @@ export async function getLessonForUser(lessonId: string, userId: string): Promis
       title: lesson.title,
       contentMd: lesson.contentMd,
       summaryMd: lesson.lessonSummaryMd,
-      requiresNote: lesson.requiresNote,
+      requiresNote,
       minNoteLength: lesson.minNoteLength ?? HOMEWORK.MIN_LENGTH,
       videoSignedUrl,
       videoPosition: progress?.videoPosition ?? 0,
@@ -137,10 +149,11 @@ export async function getLessonStreamUrl(userId: string, lessonId: string): Prom
   if (!lesson || !lesson.videoUrl) return null;
 
   const course = lesson.module.course;
+  const bypassHomework = await isHomeworkBypassed(userId);
   const [hasAccess, orderedLessons, advancedIds] = await Promise.all([
     q.hasActiveEnrollment(userId, course.id),
     q.listCourseLessonIds(course.id),
-    q.listAdvancedLessonIdsForCourse(userId, course.id),
+    q.listAdvancedLessonIdsForCourse(userId, course.id, bypassHomework),
   ]);
   if (!hasAccess) return null;
 
@@ -251,6 +264,9 @@ export async function markVideoWatched(
   const hasAccess = await q.hasActiveEnrollment(userId, lesson.module.course.id);
   if (!hasAccess) return fail('Нет доступа к уроку');
 
+  // Для пользователя с обходом ДЗ урок считается без ДЗ (переход — по кнопке).
+  const requiresNote = (await isHomeworkBypassed(userId)) ? false : lesson.requiresNote;
+
   const now = new Date();
   const existing = await q.getProgress(userId, lessonId);
   const alreadyCompleted = existing?.status === LESSON_STATUS.COMPLETED;
@@ -265,7 +281,7 @@ export async function markVideoWatched(
       ...(alreadyCompleted ? {} : { completedAt: now }),
     });
     const reward = await onLessonCompleted(userId, lessonId);
-    return ok({ completed: true, needsHomework: lesson.requiresNote, reward });
+    return ok({ completed: true, needsHomework: requiresNote, reward });
   }
 
   // Авто-фиксация просмотра (complete=false): открывает материалы/«просмотрено», без зачёта/XP.
@@ -273,5 +289,5 @@ export async function markVideoWatched(
     status: LESSON_STATUS.IN_PROGRESS,
     videoWatchedAt: now,
   });
-  return ok({ completed: false, needsHomework: lesson.requiresNote });
+  return ok({ completed: false, needsHomework: requiresNote });
 }

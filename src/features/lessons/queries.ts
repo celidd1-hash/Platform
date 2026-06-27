@@ -91,6 +91,7 @@ export function listWatchedLessonIdsForCourse(userId: string, courseId: string) 
 export async function listAdvancedLessonIdsForCourse(
   userId: string,
   courseId: string,
+  bypassHomework = false,
 ): Promise<string[]> {
   const [passed, completedNoHw] = await Promise.all([
     db.homework.findMany({
@@ -101,7 +102,8 @@ export async function listAdvancedLessonIdsForCourse(
       where: {
         userId,
         status: LessonStatus.completed,
-        lesson: { requiresNote: false, module: { courseId } },
+        // При обходе ДЗ следующий открывает любой завершённый урок (по кнопке), а не только без ДЗ.
+        lesson: { ...(bypassHomework ? {} : { requiresNote: false }), module: { courseId } },
       },
       select: { lessonId: true },
     }),
@@ -110,6 +112,13 @@ export async function listAdvancedLessonIdsForCourse(
   for (const h of passed) ids.add(h.lessonId);
   for (const p of completedNoHw) ids.add(p.lessonId);
   return [...ids];
+}
+
+/** Email ученика (нижний регистр) — для проверки обхода ДЗ (HOMEWORK.BYPASS_EMAILS). */
+export function getUserEmail(userId: string): Promise<string | null> {
+  return db.user
+    .findUnique({ where: { id: userId }, select: { email: true } })
+    .then((u) => u?.email.toLowerCase() ?? null);
 }
 
 /** Зачтено ли ДЗ урока (verdict=passed) — для показа блока ДЗ и гейта перехода. */

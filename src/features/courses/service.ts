@@ -1,4 +1,5 @@
 import { computeProgressPct, computeUnlocks } from '@/lib/progress';
+import { HOMEWORK } from '@/config/constants';
 import * as q from './queries';
 
 /**
@@ -96,10 +97,13 @@ export async function getCoursePage(slug: string, userId: string): Promise<Cours
   const course = await q.getCourseBySlug(slug);
   if (!course) return null;
 
+  const bypassHomework = HOMEWORK.BYPASS_EMAILS.length > 0
+    ? HOMEWORK.BYPASS_EMAILS.includes((await q.getUserEmail(userId)) ?? '')
+    : false;
   const [hasAccess, completedIds, advancedIds] = await Promise.all([
     q.hasActiveEnrollment(userId, course.id),
     q.listCompletedLessonIdsForCourse(userId, course.id),
-    q.listAdvancedLessonIdsForCourse(userId, course.id),
+    q.listAdvancedLessonIdsForCourse(userId, course.id, bypassHomework),
   ]);
   const completed = new Set(completedIds);
   const advanced = new Set(advancedIds);
