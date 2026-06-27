@@ -25,9 +25,7 @@ export function ModuleLessons({ lessons }: { lessons: CoursePageLesson[] }) {
               className={`${badgeBase} ${
                 lesson.locked
                   ? 'border border-line text-muted-2'
-                  : lesson.completed
-                    ? 'bg-gradient-to-br from-gold-deep to-gold text-[#1a1206]'
-                    : 'border border-gold/50 text-gold-bright'
+                  : 'bg-gradient-to-br from-gold-deep to-gold text-[#1a1206] shadow-[0_0_16px_rgba(200,160,79,0.35)]'
               }`}
             >
               {lesson.completed ? '✓' : i + 1}
@@ -47,7 +45,7 @@ export function ModuleLessons({ lessons }: { lessons: CoursePageLesson[] }) {
                 🔒
               </span>
             ) : (
-              <span className="flex-none rounded-lg border border-gold/40 px-5 py-2 font-label text-sm tracking-[1px] text-gold-bright">
+              <span className="flex-none w-40 rounded-lg bg-gradient-to-r from-gold-deep to-gold py-2.5 text-center font-label text-sm tracking-[1px] text-[#1a1206] shadow-[0_0_16px_rgba(200,160,79,0.3)] transition-colors hover:to-gold-bright">
                 {lesson.completed ? 'Повторить' : 'Открыть'}
               </span>
             )}
