@@ -14,7 +14,7 @@ export interface EditorModule {
   resultText: string | null;
   durationMinutes: number | null;
   isArchived: boolean;
-  lessons: Array<{ id: string; title: string; isArchived: boolean; requiresNote: boolean }>;
+  lessons: Array<{ id: string; title: string; position: number; isArchived: boolean; requiresNote: boolean }>;
 }
 
 const labelCls = 'mb-1 block font-label text-[11px] uppercase tracking-[1px] text-muted-2';
@@ -104,10 +104,7 @@ function AddLessonForm({ moduleId, courseId }: { moduleId: string; courseId: str
 export function StructureEditor({ courseId, modules }: { courseId: string; modules: EditorModule[] }) {
   return (
     <div className="flex flex-col gap-4">
-      {modules.map((m, mIdx) => {
-        // Сквозная нумерация: модуль продолжает счёт уроков предыдущих модулей.
-        const lessonOffset = modules.slice(0, mIdx).reduce((sum, x) => sum + x.lessons.length, 0);
-        return (
+      {modules.map((m) => (
         <div key={m.id} className={`rounded-token border bg-panel ${m.isArchived ? 'border-[rgba(217,160,102,0.3)] opacity-70' : 'border-line'}`}>
           <div className="flex items-center justify-between border-b border-line px-4 py-3">
             <span className="font-label text-sm tracking-[1px] text-gold">
@@ -115,11 +112,11 @@ export function StructureEditor({ courseId, modules }: { courseId: string; modul
             </span>
           </div>
           <ul>
-            {m.lessons.map((l, i) => (
+            {m.lessons.map((l) => (
               <li key={l.id} className="flex items-center justify-between border-b border-line px-4 py-2.5 last:border-b-0">
                 <span className={`flex items-center gap-3 text-sm ${l.isArchived ? 'text-muted-2 line-through' : 'text-ink'}`}>
                   <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full border border-gold/50 font-display text-base text-gold-bright tabular-nums">
-                    {lessonOffset + i + 1}
+                    {l.position}
                   </span>
                   {l.title}
                   {!l.requiresNote && <span className="ml-1 text-[10px] text-muted-2">без ДЗ</span>}
@@ -136,8 +133,7 @@ export function StructureEditor({ courseId, modules }: { courseId: string; modul
             <AddLessonForm moduleId={m.id} courseId={courseId} />
           </div>
         </div>
-        );
-      })}
+      ))}
 
       <div className="rounded-token border border-dashed border-line p-4">
         <AddModuleForm courseId={courseId} />

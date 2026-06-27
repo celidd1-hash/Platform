@@ -21,21 +21,14 @@ function formatDuration(min: number | null, sec: number | null): string | null {
 }
 
 /** Список уроков модуля — карточка урока: номер, длительность + статус, кнопка (ТЗ §3.3). */
-export function ModuleLessons({
-  lessons,
-  numberOffset = 0,
-}: {
-  lessons: CoursePageLesson[];
-  /** Сквозная нумерация: к индексу прибавляется число уроков предыдущих модулей. */
-  numberOffset?: number;
-}) {
+export function ModuleLessons({ lessons }: { lessons: CoursePageLesson[] }) {
   if (lessons.length === 0) {
     return <p className="text-base text-muted-2">Уроков в модуле пока нет.</p>;
   }
 
   return (
     <div className="flex flex-col gap-4">
-      {lessons.map((lesson, i) => {
+      {lessons.map((lesson) => {
         const status = lesson.locked ? 'Закрыто' : lesson.completed ? 'Пройдено' : 'Доступен';
         const duration = formatDuration(lesson.durationMinutes, lesson.durationSeconds);
 
@@ -54,7 +47,7 @@ export function ModuleLessons({
                   : 'bg-gradient-to-br from-gold-deep to-gold text-[#1a1206] shadow-[0_0_16px_rgba(200,160,79,0.35)]'
               }`}
             >
-              {numberOffset + i + 1}
+              {lesson.position}
             </div>
 
             <div className="min-w-0 flex-1">

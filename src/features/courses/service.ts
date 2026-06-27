@@ -163,8 +163,6 @@ export interface ModulePageData {
   lessonsTotal: number;
   lessonsDone: number;
   progressPct: number;
-  /** Сквозной номер первого урока модуля − 1 (для непрерывной нумерации по курсу). */
-  lessonNumberOffset: number;
   lessons: CoursePageLesson[];
 }
 
@@ -181,14 +179,8 @@ export async function getModulePage(
   const page = await getCoursePage(slug, userId);
   if (!page) return null;
 
-  const modIndex = page.modules.findIndex((m) => m.id === moduleId);
-  const mod = modIndex >= 0 ? page.modules[modIndex] : undefined;
+  const mod = page.modules.find((m) => m.id === moduleId);
   if (!mod) return null;
-
-  // Сквозная нумерация: сумма уроков всех предыдущих модулей курса.
-  const lessonNumberOffset = page.modules
-    .slice(0, modIndex)
-    .reduce((sum, m) => sum + m.lessons.length, 0);
 
   const lessonsTotal = mod.lessons.length;
   const lessonsDone = mod.lessons.filter((l) => l.completed).length;
@@ -205,7 +197,6 @@ export async function getModulePage(
     lessonsTotal,
     lessonsDone,
     progressPct: computeProgressPct(lessonsTotal, lessonsDone),
-    lessonNumberOffset,
     lessons: mod.lessons,
   };
 }

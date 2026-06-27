@@ -22,7 +22,7 @@ export interface AdminCourseNode {
     id: string;
     title: string;
     isArchived: boolean;
-    lessons: Array<{ id: string; title: string; isArchived: boolean }>;
+    lessons: Array<{ id: string; title: string; position: number; isArchived: boolean }>;
   }>;
 }
 
@@ -39,7 +39,7 @@ export async function getCoursesTree(): Promise<AdminCourseNode[]> {
       id: m.id,
       title: m.title,
       isArchived: m.isArchived,
-      lessons: m.lessons.map((l) => ({ id: l.id, title: l.title, isArchived: l.isArchived })),
+      lessons: m.lessons.map((l) => ({ id: l.id, title: l.title, position: l.position, isArchived: l.isArchived })),
     })),
   }));
 }

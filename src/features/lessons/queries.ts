@@ -15,6 +15,7 @@ export function getLessonWithContext(lessonId: string) {
     select: {
       id: true,
       title: true,
+      position: true,
       contentMd: true,
       lessonSummaryMd: true,
       videoUrl: true,
@@ -47,17 +48,6 @@ export function listCourseLessonIds(courseId: string) {
       orderBy: [{ module: { position: 'asc' } }, { position: 'asc' }],
       select: { id: true, title: true },
     });
-}
-
-/** Id живых уроков модуля по порядку — для нумерации «урок X из Y» внутри модуля. */
-export function listModuleLessonIds(moduleId: string): Promise<string[]> {
-  return db.lesson
-    .findMany({
-      where: { moduleId, ...liveLesson },
-      orderBy: { position: 'asc' },
-      select: { id: true },
-    })
-    .then((rows) => rows.map((r) => r.id));
 }
 
 export function hasActiveEnrollment(userId: string, courseId: string) {
