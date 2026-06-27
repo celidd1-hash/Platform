@@ -31,7 +31,10 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
           <Link href={`/course/${lesson.course.slug}`} className="text-xs text-muted-2 hover:text-gold">
             ← {lesson.course.title}
           </Link>
-          <div className="mt-2 font-label text-[11px] uppercase tracking-[2px] text-muted-2">
+          <div className="mt-2 font-label text-[11px] uppercase tracking-[2px] text-gold">
+            Модуль {lesson.moduleNumber} • Урок {lesson.lessonIndexInModule} из {lesson.lessonsInModule}
+          </div>
+          <div className="mt-1 font-label text-[11px] uppercase tracking-[2px] text-muted-2">
             {lesson.moduleTitle}
           </div>
           <h1 className="mt-1 font-display text-3xl font-semibold">

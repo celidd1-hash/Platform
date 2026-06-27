@@ -93,7 +93,7 @@ export default async function ModulePage({
 
         <section className="mt-10">
           <div className="sectlabel mb-5">Уроки модуля</div>
-          <ModuleLessons lessons={mod.lessons} />
+          <ModuleLessons lessons={mod.lessons} numberOffset={mod.lessonNumberOffset} />
         </section>
       </div>
     </AppShell>

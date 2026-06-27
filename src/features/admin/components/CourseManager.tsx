@@ -217,7 +217,12 @@ export function CourseManager({ courses }: { courses: AdminCourseNode[] }) {
           </div>
 
           <div className="flex flex-col gap-3 p-4">
-            {course.modules.map((module) => (
+            {course.modules.map((module, mIdx) => {
+              // Сквозная нумерация: модуль продолжает счёт уроков предыдущих модулей.
+              const lessonOffset = course.modules
+                .slice(0, mIdx)
+                .reduce((sum, m) => sum + m.lessons.length, 0);
+              return (
               <div key={module.id} className="rounded-xl border border-line bg-bg-2">
                 <div className="flex items-center justify-between gap-3 px-4 py-2.5">
                   <ModuleTitle courseId={course.id} moduleId={module.id} title={module.title} />
@@ -237,7 +242,7 @@ export function CourseManager({ courses }: { courses: AdminCourseNode[] }) {
                     >
                       <span className={`flex items-center gap-3 text-sm ${lesson.isArchived ? 'text-muted-2 line-through' : 'text-ink'}`}>
                         <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full border border-gold/50 font-display text-base text-gold-bright tabular-nums">
-                          {i + 1}
+                          {lessonOffset + i + 1}
                         </span>
                         {lesson.title}
                       </span>
@@ -264,7 +269,8 @@ export function CourseManager({ courses }: { courses: AdminCourseNode[] }) {
                 </ul>
                 <AddLessonRow moduleId={module.id} />
               </div>
-            ))}
+              );
+            })}
             {course.modules.length === 0 && (
               <p className="text-xs text-muted-2">Модулей нет</p>
             )}

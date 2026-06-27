@@ -38,6 +38,10 @@ export interface LessonView {
   homeworkPassed: boolean;
   course: { title: string; slug: string };
   moduleTitle: string;
+  /** Номер модуля (1-based) и положение урока внутри модуля — для «Модуль N • Урок X из Y». */
+  moduleNumber: number;
+  lessonIndexInModule: number;
+  lessonsInModule: number;
   files: Array<{ id: string; title: string; fileType: string; sizeBytes: number }>;
   /** Внешняя ссылка на материалы (Google Диск и т.п.), если задана. */
   materialsUrl: string | null;
@@ -75,13 +79,15 @@ export async function getLessonForUser(lessonId: string, userId: string): Promis
 
   const course = lesson.module.course;
   const bypassHomework = await isHomeworkBypassed(userId);
-  const [hasAccess, orderedLessons, advancedIds, progress, homeworkPassed] = await Promise.all([
-    q.hasActiveEnrollment(userId, course.id),
-    q.listCourseLessonIds(course.id),
-    q.listAdvancedLessonIdsForCourse(userId, course.id, bypassHomework),
-    q.getProgress(userId, lessonId),
-    q.hasPassedHomework(userId, lessonId),
-  ]);
+  const [hasAccess, orderedLessons, advancedIds, progress, homeworkPassed, moduleLessonIds] =
+    await Promise.all([
+      q.hasActiveEnrollment(userId, course.id),
+      q.listCourseLessonIds(course.id),
+      q.listAdvancedLessonIdsForCourse(userId, course.id, bypassHomework),
+      q.getProgress(userId, lessonId),
+      q.hasPassedHomework(userId, lessonId),
+      q.listModuleLessonIds(lesson.module.id),
+    ]);
 
   if (!hasAccess) return { kind: 'access_denied', courseSlug: course.slug };
 
@@ -130,6 +136,9 @@ export async function getLessonForUser(lessonId: string, userId: string): Promis
       homeworkPassed,
       course: { title: course.title, slug: course.slug },
       moduleTitle: lesson.module.title,
+      moduleNumber: lesson.module.position + 1,
+      lessonIndexInModule: Math.max(1, moduleLessonIds.indexOf(lessonId) + 1),
+      lessonsInModule: moduleLessonIds.length,
       files: lesson.files,
       materialsUrl: lesson.materialsUrl,
       filesUnlocked,
