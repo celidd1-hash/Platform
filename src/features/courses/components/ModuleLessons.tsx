@@ -4,12 +4,20 @@ import type { CoursePageLesson } from '../service';
 const badgeBase =
   'flex h-12 w-12 flex-none items-center justify-center rounded-full font-display text-lg';
 
-/** «31» → «31 мин», «75» → «1 ч 15 мин». */
-function formatDuration(min: number): string {
-  if (min < 60) return `${min} мин`;
-  const h = Math.floor(min / 60);
-  const m = min % 60;
-  return m > 0 ? `${h} ч ${m} мин` : `${h} ч`;
+/** Длительность урока: «31 мин 20 сек», «1 ч 5 мин», «45 сек». Пусто → null. */
+function formatDuration(min: number | null, sec: number | null): string | null {
+  const m = min ?? 0;
+  const s = sec ?? 0;
+  if (m <= 0 && s <= 0) return null;
+  const parts: string[] = [];
+  if (m >= 60) {
+    parts.push(`${Math.floor(m / 60)} ч`);
+    if (m % 60 > 0) parts.push(`${m % 60} мин`);
+  } else if (m > 0) {
+    parts.push(`${m} мин`);
+  }
+  if (s > 0) parts.push(`${s} сек`);
+  return parts.join(' ');
 }
 
 /** Список уроков модуля — карточка урока: номер, длительность + статус, кнопка (ТЗ §3.3). */
@@ -22,6 +30,7 @@ export function ModuleLessons({ lessons }: { lessons: CoursePageLesson[] }) {
     <div className="flex flex-col gap-4">
       {lessons.map((lesson, i) => {
         const status = lesson.locked ? 'Закрыто' : lesson.completed ? 'Пройдено' : 'Доступен';
+        const duration = formatDuration(lesson.durationMinutes, lesson.durationSeconds);
 
         const card = (
           <div
@@ -46,10 +55,10 @@ export function ModuleLessons({ lessons }: { lessons: CoursePageLesson[] }) {
                 {lesson.title}
               </div>
               <div className="mt-1.5 flex items-center gap-3 font-label text-xs uppercase tracking-[1px] text-muted-2">
-                {lesson.durationMinutes != null && lesson.durationMinutes > 0 && (
+                {duration && (
                   <span className="flex items-center gap-1.5">
                     <span aria-hidden>🕑</span>
-                    {formatDuration(lesson.durationMinutes)}
+                    {duration}
                   </span>
                 )}
                 <span

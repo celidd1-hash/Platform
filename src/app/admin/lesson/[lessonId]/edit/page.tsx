@@ -28,6 +28,7 @@ export default async function LessonEditorPage({
           title: lesson.title,
           position: lesson.position,
           durationMinutes: lesson.durationMinutes,
+          durationSeconds: lesson.durationSeconds,
           contentMd: lesson.contentMd,
           videoUrl: lesson.videoUrl,
           materialsUrl: lesson.materialsUrl,

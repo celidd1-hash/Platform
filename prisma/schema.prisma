@@ -124,6 +124,7 @@ model Lesson {
   requiresNote   Boolean @default(true) @map("requires_note")
   minNoteLength  Int?    @map("min_note_length")
   durationMinutes Int?   @map("duration_minutes")
+  durationSeconds Int?   @map("duration_seconds")
   xpReward       Int     @default(50) @map("xp_reward")
   isArchived     Boolean @default(false) @map("is_archived")
   deletedAt      DateTime? @map("deleted_at")

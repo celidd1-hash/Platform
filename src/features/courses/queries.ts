@@ -74,7 +74,7 @@ export function getCourseBySlug(slug: string) {
           lessons: {
             where: liveLesson,
             orderBy: { position: 'asc' },
-            select: { id: true, title: true, position: true, durationMinutes: true },
+            select: { id: true, title: true, position: true, durationMinutes: true, durationSeconds: true },
           },
         },
       },

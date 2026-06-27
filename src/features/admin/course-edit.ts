@@ -40,6 +40,7 @@ export const lessonSchema = z.object({
   requiresNote: z.boolean().default(true),
   minNoteLength: z.coerce.number().int().min(0).max(10_000).optional(),
   durationMinutes: z.coerce.number().int().min(0).max(100_000).optional(),
+  durationSeconds: z.coerce.number().int().min(0).max(59).optional(),
   xpReward: z.coerce.number().int().min(0).max(10_000).default(50),
 });
 
@@ -125,6 +126,7 @@ export async function saveLesson(
     requiresNote: input.requiresNote,
     minNoteLength: input.minNoteLength && input.minNoteLength > 0 ? input.minNoteLength : null,
     durationMinutes: input.durationMinutes && input.durationMinutes > 0 ? input.durationMinutes : null,
+    durationSeconds: input.durationSeconds && input.durationSeconds > 0 ? input.durationSeconds : null,
     xpReward: input.xpReward,
   };
 
