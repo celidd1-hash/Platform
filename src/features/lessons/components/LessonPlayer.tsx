@@ -104,18 +104,20 @@ export function LessonPlayer({
     video.addEventListener('loadedmetadata', onLoaded);
 
     // Запрет перемотки вперёд (первый просмотр): возвращаем на максимально просмотренную точку.
-    const onSeeking = () => {
+    const clampSeek = () => {
       if (!lockSeekRef.current) return;
       const max = maxTimeRef.current;
       if (video.currentTime > max + SEEK_TOLERANCE_SEC) {
         video.currentTime = max;
       }
     };
-    video.addEventListener('seeking', onSeeking);
+    video.addEventListener('seeking', clampSeek);
+    video.addEventListener('seeked', clampSeek);
 
     return () => {
       video.removeEventListener('loadedmetadata', onLoaded);
-      video.removeEventListener('seeking', onSeeking);
+      video.removeEventListener('seeking', clampSeek);
+      video.removeEventListener('seeked', clampSeek);
       hls?.destroy();
     };
   }, [src, initialPosition]);
@@ -124,8 +126,11 @@ export function LessonPlayer({
     const video = videoRef.current;
     if (!video) return;
 
-    // Продвигаем потолок перемотки по мере просмотра (для запрета мотать вперёд).
-    if (video.currentTime > maxTimeRef.current) maxTimeRef.current = video.currentTime;
+    // Потолок перемотки растёт ТОЛЬКО при плавном воспроизведении (маленький шаг и не во время
+    // seek). Иначе timeupdate с перемотанной вперёд позицией поднял бы потолок и снял запрет.
+    if (!video.seeking && video.currentTime <= maxTimeRef.current + SEEK_TOLERANCE_SEC) {
+      maxTimeRef.current = Math.max(maxTimeRef.current, video.currentTime);
+    }
 
     const now = Math.floor(video.currentTime);
     if (onSavePosition && now - lastSavedRef.current >= 10) {
