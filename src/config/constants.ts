@@ -45,7 +45,7 @@ export const HOMEWORK = {
    * ВРЕМЕННО (тест): для этих email сдача ДЗ отключена — ученик смотрит уроки как все,
    * следующий открывается по кнопке «Завершить урок», без ожидания зачёта ДЗ. Email в нижнем регистре.
    */
-  BYPASS_EMAILS: ['spiglazov1992@gmail.com'] as string[],
+  BYPASS_EMAILS: ['spiglazov1992@gmail.com', 'viktorgigo@gmail.com'] as string[],
 } as const;
 
 /** Вердикты проверки ДЗ. */
